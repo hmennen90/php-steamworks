@@ -1,0 +1,27 @@
+ARG_WITH("steamworks", "for Steamworks SDK support", "no");
+
+if (PHP_STEAMWORKS != "no") {
+    var steam_sdk_dir = PHP_STEAMWORKS;
+    if (steam_sdk_dir == "yes") {
+        steam_sdk_dir = configure_module_dirname + "\\sdk";
+    }
+
+    if (!FSO.FileExists(steam_sdk_dir + "\\public\\steam\\steam_api.h")) {
+        ERROR("Steamworks SDK not found. Download from partner.steamgames.com");
+    }
+
+    ADD_FLAG("CFLAGS_STEAMWORKS", '/I "' + steam_sdk_dir + '\\public"');
+    ADD_FLAG("LDFLAGS_STEAMWORKS", '/LIBPATH:"' + steam_sdk_dir + '\\redistributable_bin\\win64"');
+    ADD_FLAG("LIBS_STEAMWORKS", "steam_api64.lib");
+
+    EXTENSION("steamworks",
+        "src\\php_steamworks.c " +
+        "src\\modules\\steam_init.c " +
+        "src\\modules\\steam_user.c " +
+        "src\\modules\\steam_friends.c " +
+        "src\\modules\\steam_stats.c " +
+        "src\\modules\\steam_remote.c " +
+        "src\\modules\\steam_apps.c " +
+        "src\\modules\\steam_utils.c",
+        PHP_STEAMWORKS_SHARED);
+}
