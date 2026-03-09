@@ -1,5 +1,5 @@
 {
-    "name": "hmennen90/steamworks",
+    "name": "hmennen90/php-steamworks",
     "type": "php-ext",
     "description": "PHP extension providing access to the Valve Steamworks SDK via a flat C API",
     "license": "MIT",
