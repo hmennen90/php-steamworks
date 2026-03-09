@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include <steam/steam_api_flat.h>
+#include "../steam_api_c.h"
 
 PHP_FUNCTION(steam_user_get_steam_id)
 {
