@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: PHP ${{ matrix.php }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        php: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: phpize, php-config
+          extensions: none
+          coverage: none
+
+      - name: Build extension with mock SDK
+        run: |
+          phpize
+          ./configure --with-steamworks --enable-steamworks-mock
+          make -j$(nproc)
+
+      - name: Verify extension loads
+        run: |
+          php -dextension=$(pwd)/modules/steamworks.so -m | grep steamworks
+          php -dextension=$(pwd)/modules/steamworks.so -r "var_dump(extension_loaded('steamworks'));"
+
+      - name: Check all functions registered
+        run: |
+          php -dextension=$(pwd)/modules/steamworks.so -r "
+            \$functions = [
+              'steam_init', 'steam_shutdown', 'steam_run_callbacks',
+              'steam_user_get_steam_id',
+              'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay',
+              'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',
+              'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',
+              'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists',
+              'steam_remote_file_delete', 'steam_remote_file_list',
+              'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed',
+              'steam_apps_get_app_id', 'steam_apps_get_language',
+              'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code',
+            ];
+            \$ok = true;
+            foreach (\$functions as \$fn) {
+              if (!function_exists(\$fn)) {
+                echo \"MISSING: \$fn\n\";
+                \$ok = false;
+              }
+            }
+            if (\$ok) echo \"All \" . count(\$functions) . \" functions registered.\n\";
+            else exit(1);
+          "
+
+      - name: Test steam_init returns false (no Steam running)
+        run: |
+          php -dextension=$(pwd)/modules/steamworks.so -r "
+            \$result = @steam_init();
+            assert(\$result === false, 'steam_init() should return false without Steam');
+            echo \"steam_init() correctly returned false\n\";
+          "
+
+      - name: Test mock API responses
+        run: |
+          php -dextension=$(pwd)/modules/steamworks.so -r "
+            echo 'Player name: ' . steam_friends_get_name() . \"\n\";
+            echo 'App ID: ' . steam_utils_get_app_id() . \"\n\";
+            echo 'Country: ' . steam_utils_get_country_code() . \"\n\";
+            echo 'Language: ' . steam_apps_get_language() . \"\n\";
+            assert(steam_friends_get_name() === 'MockPlayer');
+            assert(steam_utils_get_app_id() === 480);
+            assert(steam_utils_get_country_code() === 'US');
+            echo \"All mock responses correct.\n\";
+          "
+
+      - name: Install PHPUnit
+        run: |
+          curl -sL https://phar.phpunit.de/phpunit-10.phar -o phpunit.phar
+          chmod +x phpunit.phar
+
+      - name: Run PHPUnit tests
+        run: |
+          php -dextension=$(pwd)/modules/steamworks.so phpunit.phar \
+            --bootstrap tests/bootstrap.php \
+            --testdox \
+            tests/
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Validate PHP stubs syntax
+        run: php -l stubs/steamworks.php
+
+      - name: Validate test syntax
+        run: |
+          for f in tests/*.php; do
+            php -l "$f"
+          done
+
+      - name: Validate example syntax
+        run: |
+          for f in examples/*.php; do
+            php -l "$f"
+          done
