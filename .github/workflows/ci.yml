@@ -25,7 +25,6 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           tools: phpize, php-config
-          extensions: none
           coverage: none
 
       - name: Build extension with mock SDK
