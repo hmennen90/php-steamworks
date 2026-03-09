@@ -1,0 +1,33 @@
+{
+    "name": "hmennen90/steamworks",
+    "type": "php-ext",
+    "description": "PHP extension providing access to the Valve Steamworks SDK via a flat C API",
+    "license": "MIT",
+    "keywords": ["steam", "steamworks", "valve", "game", "php-extension"],
+    "homepage": "https://github.com/hmennen90/php-steamworks",
+    "authors": [
+        {
+            "name": "Hendrik Mennen",
+            "homepage": "https://github.com/hmennen90"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "php-ext": {
+        "extension-name": "steamworks",
+        "os-families-exclude": ["windows"],
+        "configure-options": [
+            {
+                "name": "with-steamworks",
+                "description": "Path to the Steamworks SDK directory (must contain public/steam/steam_api.h)",
+                "needs-value": true
+            },
+            {
+                "name": "enable-steamworks-mock",
+                "description": "Use mock Steam API for testing (no real SDK required)",
+                "needs-value": false
+            }
+        ]
+    }
+}
