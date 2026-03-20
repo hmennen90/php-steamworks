@@ -13,8 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
-        php: ['8.1', '8.2', '8.3', '8.4']
+        os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14]
+        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
         run: |
           phpize
           ./configure --with-steamworks --enable-steamworks-mock
-          make -j$(nproc)
+          make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
 
       - name: Verify extension loads
         run: |
@@ -96,6 +96,101 @@ jobs:
             --bootstrap tests/bootstrap.php \
             --testdox \
             tests/
+
+  build-and-test-windows:
+    name: PHP ${{ matrix.php }} / windows-latest
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP SDK
+        id: setup-php-sdk
+        uses: php/setup-php-sdk@v0.8
+        with:
+          version: ${{ matrix.php }}
+          arch: x64
+          ts: nts
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build extension with mock SDK
+        run: |
+          phpize
+          configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }}
+          nmake
+
+      - name: Verify extension loads
+        run: |
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll -m
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll -r "var_dump(extension_loaded('steamworks'));"
+
+      - name: Check all functions registered
+        run: |
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll -r "
+            $functions = [
+              'steam_init', 'steam_shutdown', 'steam_run_callbacks',
+              'steam_user_get_steam_id',
+              'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay',
+              'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',
+              'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',
+              'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists',
+              'steam_remote_file_delete', 'steam_remote_file_list',
+              'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed',
+              'steam_apps_get_app_id', 'steam_apps_get_language',
+              'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code',
+            ];
+            $ok = true;
+            foreach ($functions as $fn) {
+              if (!function_exists($fn)) {
+                echo 'MISSING: ' . $fn . PHP_EOL;
+                $ok = false;
+              }
+            }
+            if ($ok) echo 'All ' . count($functions) . ' functions registered.' . PHP_EOL;
+            else exit(1);
+          "
+
+      - name: Test steam_init returns false (no Steam running)
+        run: |
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll -r "
+            $result = @steam_init();
+            assert($result === false, 'steam_init() should return false without Steam');
+            echo 'steam_init() correctly returned false' . PHP_EOL;
+          "
+
+      - name: Test mock API responses
+        run: |
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll -r "
+            echo 'Player name: ' . steam_friends_get_name() . PHP_EOL;
+            echo 'App ID: ' . steam_utils_get_app_id() . PHP_EOL;
+            echo 'Country: ' . steam_utils_get_country_code() . PHP_EOL;
+            echo 'Language: ' . steam_apps_get_language() . PHP_EOL;
+            assert(steam_friends_get_name() === 'MockPlayer');
+            assert(steam_utils_get_app_id() === 480);
+            assert(steam_utils_get_country_code() === 'US');
+            echo 'All mock responses correct.' . PHP_EOL;
+          "
+
+      - name: Install PHPUnit
+        run: |
+          Invoke-WebRequest -Uri https://phar.phpunit.de/phpunit-10.phar -OutFile phpunit.phar
+
+      - name: Run PHPUnit tests
+        run: |
+          php -dextension=${{ github.workspace }}\modules\steamworks.dll phpunit.phar --bootstrap tests/bootstrap.php --testdox tests/
 
   static-analysis:
     name: Static Analysis

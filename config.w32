@@ -1,20 +1,8 @@
 ARG_WITH("steamworks", "for Steamworks SDK support", "no");
+ARG_ENABLE("steamworks-mock", "Use mock Steam API for testing", "no");
 
 if (PHP_STEAMWORKS != "no") {
-    var steam_sdk_dir = PHP_STEAMWORKS;
-    if (steam_sdk_dir == "yes") {
-        steam_sdk_dir = configure_module_dirname + "\\sdk";
-    }
-
-    if (!FSO.FileExists(steam_sdk_dir + "\\public\\steam\\steam_api.h")) {
-        ERROR("Steamworks SDK not found. Download from partner.steamgames.com");
-    }
-
-    ADD_FLAG("CFLAGS_STEAMWORKS", '/I "' + steam_sdk_dir + '\\public"');
-    ADD_FLAG("LDFLAGS_STEAMWORKS", '/LIBPATH:"' + steam_sdk_dir + '\\redistributable_bin\\win64"');
-    ADD_FLAG("LIBS_STEAMWORKS", "steam_api64.lib");
-
-    EXTENSION("steamworks",
+    var sources =
         "src\\php_steamworks.c " +
         "src\\modules\\steam_init.c " +
         "src\\modules\\steam_user.c " +
@@ -22,6 +10,27 @@ if (PHP_STEAMWORKS != "no") {
         "src\\modules\\steam_stats.c " +
         "src\\modules\\steam_remote.c " +
         "src\\modules\\steam_apps.c " +
-        "src\\modules\\steam_utils.c",
-        PHP_STEAMWORKS_SHARED);
+        "src\\modules\\steam_utils.c";
+
+    if (PHP_STEAMWORKS_MOCK == "yes") {
+        var mock_dir = configure_module_dirname + "\\ci\\mock_sdk";
+        ADD_FLAG("CFLAGS_STEAMWORKS", '/I "' + mock_dir + '\\public"');
+        ADD_FLAG("CFLAGS_STEAMWORKS", "/DSTEAMWORKS_MOCK=1");
+        sources += " ci\\mock_sdk\\steam_api_mock.c";
+    } else {
+        var steam_sdk_dir = PHP_STEAMWORKS;
+        if (steam_sdk_dir == "yes") {
+            steam_sdk_dir = configure_module_dirname + "\\sdk";
+        }
+
+        if (!FSO.FileExists(steam_sdk_dir + "\\public\\steam\\steam_api.h")) {
+            ERROR("Steamworks SDK not found. Download from partner.steamgames.com");
+        }
+
+        ADD_FLAG("CFLAGS_STEAMWORKS", '/I "' + steam_sdk_dir + '\\public"');
+        ADD_FLAG("LDFLAGS_STEAMWORKS", '/LIBPATH:"' + steam_sdk_dir + '\\redistributable_bin\\win64"');
+        ADD_FLAG("LIBS_STEAMWORKS", "steam_api64.lib");
+    }
+
+    EXTENSION("steamworks", sources, PHP_STEAMWORKS_SHARED);
 }
