@@ -130,6 +130,13 @@ jobs:
           call configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }} || exit /b 1
           nmake || exit /b 1
 
+      - name: Enable required PHP extensions
+        shell: cmd
+        run: |
+          echo extension_dir=${{ steps.setup-php-sdk.outputs.prefix }}\ext>> ${{ steps.setup-php-sdk.outputs.prefix }}\php.ini
+          echo extension=php_mbstring.dll>> ${{ steps.setup-php-sdk.outputs.prefix }}\php.ini
+          echo extension=php_openssl.dll>> ${{ steps.setup-php-sdk.outputs.prefix }}\php.ini
+
       - name: Find built DLL
         shell: cmd
         run: |
