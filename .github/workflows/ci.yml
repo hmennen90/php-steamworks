@@ -111,7 +111,7 @@ jobs:
 
       - name: Setup PHP SDK
         id: setup-php-sdk
-        uses: php/setup-php-sdk@v0.8
+        uses: php/setup-php-sdk@v0.12
         with:
           version: ${{ matrix.php }}
           arch: x64
