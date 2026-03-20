@@ -129,8 +129,8 @@ jobs:
       - name: Build extension with mock SDK
         shell: cmd
         run: |
-          phpize || exit /b 1
-          configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }} || exit /b 1
+          call phpize || exit /b 1
+          call configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }} || exit /b 1
           nmake || exit /b 1
 
       - name: Find built DLL
