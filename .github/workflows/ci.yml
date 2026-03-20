@@ -136,8 +136,8 @@ jobs:
       - name: Find built DLL
         shell: cmd
         run: |
-          dir /s /b *.dll
-          for /r %%f in (php_steamworks.dll) do echo EXT_DLL=%%f>> %GITHUB_ENV%
+          echo EXT_DLL=%CD%\x64\Release\php_steamworks.dll>> %GITHUB_ENV%
+          if not exist x64\Release\php_steamworks.dll (echo DLL not found & exit /b 1)
 
       - name: Verify extension loads
         shell: cmd
