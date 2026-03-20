@@ -129,38 +129,33 @@ jobs:
       - name: Build extension with mock SDK
         shell: cmd
         run: |
-          phpize
-          configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }}
-          nmake
+          phpize || exit /b 1
+          configure --with-steamworks --enable-steamworks-mock --with-prefix=${{ steps.setup-php-sdk.outputs.prefix }} || exit /b 1
+          nmake || exit /b 1
 
       - name: Find built DLL
         shell: cmd
-        id: find-dll
         run: |
-          for /r %%f in (php_steamworks.dll) do (
-            echo dll_path=%%f>> %GITHUB_OUTPUT%
-          )
+          dir /s /b *.dll
+          for /r %%f in (php_steamworks.dll) do echo EXT_DLL=%%f>> %GITHUB_ENV%
 
       - name: Verify extension loads
         shell: cmd
         run: |
-          php -dextension=${{ steps.find-dll.outputs.dll_path }} -m
-          php -dextension=${{ steps.find-dll.outputs.dll_path }} -r "var_dump(extension_loaded('steamworks'));"
+          php -dextension=%EXT_DLL% -m || exit /b 1
+          php -dextension=%EXT_DLL% -r "var_dump(extension_loaded('steamworks'));" || exit /b 1
 
       - name: Check all functions registered
         shell: cmd
-        run: |
-          php -dextension=${{ steps.find-dll.outputs.dll_path }} -r "$functions = ['steam_init', 'steam_shutdown', 'steam_run_callbacks', 'steam_user_get_steam_id', 'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay', 'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store', 'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float', 'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists', 'steam_remote_file_delete', 'steam_remote_file_list', 'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed', 'steam_apps_get_app_id', 'steam_apps_get_language', 'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code']; $ok = true; foreach ($functions as $fn) { if (!function_exists($fn)) { echo 'MISSING: ' . $fn . PHP_EOL; $ok = false; } } if ($ok) echo 'All ' . count($functions) . ' functions registered.' . PHP_EOL; else exit(1);"
+        run: php -dextension=%EXT_DLL% -r "$functions = ['steam_init', 'steam_shutdown', 'steam_run_callbacks', 'steam_user_get_steam_id', 'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay', 'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store', 'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float', 'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists', 'steam_remote_file_delete', 'steam_remote_file_list', 'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed', 'steam_apps_get_app_id', 'steam_apps_get_language', 'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code']; $ok = true; foreach ($functions as $fn) { if (!function_exists($fn)) { echo 'MISSING: ' . $fn . PHP_EOL; $ok = false; } } if ($ok) echo 'All ' . count($functions) . ' functions registered.' . PHP_EOL; else exit(1);"
 
       - name: Test steam_init returns false (no Steam running)
         shell: cmd
-        run: |
-          php -dextension=${{ steps.find-dll.outputs.dll_path }} -r "$result = @steam_init(); assert($result === false, 'steam_init() should return false without Steam'); echo 'steam_init() correctly returned false' . PHP_EOL;"
+        run: php -dextension=%EXT_DLL% -r "$result = @steam_init(); assert($result === false, 'steam_init() should return false without Steam'); echo 'steam_init() correctly returned false' . PHP_EOL;"
 
       - name: Test mock API responses
         shell: cmd
-        run: |
-          php -dextension=${{ steps.find-dll.outputs.dll_path }} -r "echo 'Player name: ' . steam_friends_get_name() . PHP_EOL; echo 'App ID: ' . steam_utils_get_app_id() . PHP_EOL; echo 'Country: ' . steam_utils_get_country_code() . PHP_EOL; echo 'Language: ' . steam_apps_get_language() . PHP_EOL; assert(steam_friends_get_name() === 'MockPlayer'); assert(steam_utils_get_app_id() === 480); assert(steam_utils_get_country_code() === 'US'); echo 'All mock responses correct.' . PHP_EOL;"
+        run: php -dextension=%EXT_DLL% -r "echo 'Player name: ' . steam_friends_get_name() . PHP_EOL; echo 'App ID: ' . steam_utils_get_app_id() . PHP_EOL; echo 'Country: ' . steam_utils_get_country_code() . PHP_EOL; echo 'Language: ' . steam_apps_get_language() . PHP_EOL; assert(steam_friends_get_name() === 'MockPlayer'); assert(steam_utils_get_app_id() === 480); assert(steam_utils_get_country_code() === 'US'); echo 'All mock responses correct.' . PHP_EOL;"
 
       - name: Install PHPUnit
         shell: cmd
@@ -168,7 +163,7 @@ jobs:
 
       - name: Run PHPUnit tests
         shell: cmd
-        run: php -dextension=${{ steps.find-dll.outputs.dll_path }} phpunit.phar --bootstrap tests/bootstrap.php --testdox tests/
+        run: php -dextension=%EXT_DLL% phpunit.phar --bootstrap tests/bootstrap.php --testdox tests/
 
   static-analysis:
     name: Static Analysis
