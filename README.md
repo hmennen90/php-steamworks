@@ -10,18 +10,47 @@ Native PHP extension providing access to the [Steamworks SDK](https://partner.st
 
 ## Installation
 
-1. Download the Steamworks SDK and extract it to `sdk/` in the project root.
+### Via PIE (recommended)
+
+[PIE](https://github.com/php/pie) is the official PHP extension installer.
+
+```bash
+pie install hmennen90/php-steamworks --with-steamworks=/path/to/steamworks-sdk
+```
+
+After installation, copy `libsteam_api.dylib` (macOS) or `libsteam_api.so` (Linux) from the SDK's `redistributable_bin/` directory next to the built extension:
+
+```bash
+# macOS
+cp /path/to/steamworks-sdk/redistributable_bin/osx/libsteam_api.dylib "$(php-config --extension-dir)/"
+
+# Linux x86_64
+cp /path/to/steamworks-sdk/redistributable_bin/linux64/libsteam_api.so "$(php-config --extension-dir)/"
+```
+
+> **Note (Laravel Herd / custom PHP builds):** If PIE fails to auto-install the `.so` due to a read-only
+> filesystem, the build output still exists at `~/.pie/php*/vendor/hmennen90/php-steamworks/modules/steamworks.so`.
+> Copy it to your extension directory manually and use an absolute path in `php.ini`:
+> ```ini
+> extension=/full/path/to/steamworks.so
+> ```
+
+### Manual build
+
+1. Download the Steamworks SDK and extract it.
 
 2. Build the extension:
 
 ```bash
 phpize
-./configure --with-steamworks=./sdk
+./configure --with-steamworks=/path/to/steamworks-sdk
 make
 make install
 ```
 
-3. Enable the extension in `php.ini`:
+3. Copy the Steam shared library next to the extension (see PIE section above).
+
+4. Enable the extension in `php.ini`:
 
 ```ini
 extension=steamworks
