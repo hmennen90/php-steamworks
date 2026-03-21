@@ -1,8 +1,14 @@
-# Steamworks SDK (headers are NDA-protected, redistributable_bin is allowed)
-sdk/*
+# Steamworks SDK — NDA-protected (NEVER commit these)
+sdk/public/
+sdk/glmgr/
+sdk/tools/
+sdk/steamworksexample/
+sdk/Readme.txt
+
+# Allow only the redistributable runtime libraries (Valve permits redistribution)
+# and the .gitkeep placeholder
 !sdk/.gitkeep
 !sdk/redistributable_bin/
-!sdk/redistributable_bin/**
 
 # Build artifacts
 *.lo
