@@ -8,14 +8,17 @@
 static int mock_instance = 0;
 
 /* Core */
-bool SteamAPI_Init(void)     { return false; }
+ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg) {
+    if (pOutErrMsg) { (*pOutErrMsg)[0] = '\0'; }
+    return k_ESteamAPIInitResult_NoSteamClient;
+}
 void SteamAPI_Shutdown(void) { }
 void SteamAPI_RunCallbacks(void) { }
 
 /* Accessors — return a non-NULL pointer so functions can proceed */
 ISteamUser*          SteamAPI_SteamUser_v023(void)          { return (ISteamUser*)&mock_instance; }
-ISteamFriends*       SteamAPI_SteamFriends_v017(void)       { return (ISteamFriends*)&mock_instance; }
-ISteamUserStats*     SteamAPI_SteamUserStats_v012(void)     { return (ISteamUserStats*)&mock_instance; }
+ISteamFriends*       SteamAPI_SteamFriends_v018(void)       { return (ISteamFriends*)&mock_instance; }
+ISteamUserStats*     SteamAPI_SteamUserStats_v013(void)     { return (ISteamUserStats*)&mock_instance; }
 ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void) { return (ISteamRemoteStorage*)&mock_instance; }
 ISteamApps*          SteamAPI_SteamApps_v008(void)          { return (ISteamApps*)&mock_instance; }
 ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtils*)&mock_instance; }
