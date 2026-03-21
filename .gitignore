@@ -1,14 +1,16 @@
-# Steamworks SDK (darf nicht redistribuiert werden)
+# Steamworks SDK (headers are NDA-protected, redistributable_bin is allowed)
 sdk/*
 !sdk/.gitkeep
+!sdk/redistributable_bin/
+!sdk/redistributable_bin/**
 
 # Build artifacts
 *.lo
 *.la
 *.o
-*.so
-*.dylib
-*.dll
+src/*.so
+src/*.dylib
+src/*.dll
 .libs/
 /modules/
 build/
