@@ -5,8 +5,10 @@ PHP_FUNCTION(steam_init)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    if (!SteamAPI_Init()) {
-        php_error_docref(NULL, E_WARNING, "SteamAPI_Init failed. Is Steam running?");
+    SteamErrMsg errMsg = {0};
+    ESteamAPIInitResult result = SteamAPI_InitFlat(&errMsg);
+    if (result != k_ESteamAPIInitResult_OK) {
+        php_error_docref(NULL, E_WARNING, "SteamAPI_InitFlat failed (%d): %s", (int)result, errMsg);
         RETURN_FALSE;
     }
     RETURN_TRUE;

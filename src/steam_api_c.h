@@ -28,15 +28,26 @@ typedef int32_t  int32;
 typedef uint32_t uint32;
 typedef uint64_t uint64_steamid;
 
+/* Steam error message buffer (1024 bytes as per SDK) */
+typedef char SteamErrMsg[1024];
+
+/* Init result enum (matches ESteamAPIInitResult in SDK) */
+typedef enum {
+    k_ESteamAPIInitResult_OK = 0,
+    k_ESteamAPIInitResult_FailedGeneric = 1,
+    k_ESteamAPIInitResult_NoSteamClient = 2,
+    k_ESteamAPIInitResult_VersionMismatch = 3,
+} ESteamAPIInitResult;
+
 /* ── Core ──────────────────────────────────────────────────────────── */
-bool SteamAPI_Init(void);
+ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg);
 void SteamAPI_Shutdown(void);
 void SteamAPI_RunCallbacks(void);
 
 /* ── Accessor functions (return interface pointers) ────────────────── */
 ISteamUser         *SteamAPI_SteamUser_v023(void);
-ISteamFriends      *SteamAPI_SteamFriends_v017(void);
-ISteamUserStats    *SteamAPI_SteamUserStats_v012(void);
+ISteamFriends      *SteamAPI_SteamFriends_v018(void);
+ISteamUserStats    *SteamAPI_SteamUserStats_v013(void);
 ISteamRemoteStorage*SteamAPI_SteamRemoteStorage_v016(void);
 ISteamApps         *SteamAPI_SteamApps_v008(void);
 ISteamUtils        *SteamAPI_SteamUtils_v010(void);
