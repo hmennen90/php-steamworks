@@ -148,7 +148,7 @@ PHP_FUNCTION(steam_get_installed_depots) {
 
     DepotId_t depots[64];
     uint32 count = SteamAPI_ISteamApps_GetInstalledDepots(
-        SteamAPI_SteamApps_v008(), 0, depots, 64
+        SteamAPI_SteamApps_v009(), 0, depots, 64
     );
 
     for (uint32 i = 0; i < count; i++) {

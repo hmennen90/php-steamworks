@@ -20,7 +20,7 @@ ISteamUser*          SteamAPI_SteamUser_v023(void)          { return (ISteamUser
 ISteamFriends*       SteamAPI_SteamFriends_v018(void)       { return (ISteamFriends*)&mock_instance; }
 ISteamUserStats*     SteamAPI_SteamUserStats_v013(void)     { return (ISteamUserStats*)&mock_instance; }
 ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void) { return (ISteamRemoteStorage*)&mock_instance; }
-ISteamApps*          SteamAPI_SteamApps_v008(void)          { return (ISteamApps*)&mock_instance; }
+ISteamApps*          SteamAPI_SteamApps_v009(void)          { return (ISteamApps*)&mock_instance; }
 ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtils*)&mock_instance; }
 
 /* ISteamUser */

@@ -49,7 +49,7 @@ ISteamUser         *SteamAPI_SteamUser_v023(void);
 ISteamFriends      *SteamAPI_SteamFriends_v018(void);
 ISteamUserStats    *SteamAPI_SteamUserStats_v013(void);
 ISteamRemoteStorage*SteamAPI_SteamRemoteStorage_v016(void);
-ISteamApps         *SteamAPI_SteamApps_v008(void);
+ISteamApps         *SteamAPI_SteamApps_v009(void);
 ISteamUtils        *SteamAPI_SteamUtils_v010(void);
 
 /* ── ISteamUser ────────────────────────────────────────────────────── */
