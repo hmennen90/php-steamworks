@@ -39,6 +39,7 @@ uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);
 bool        SteamAPI_ISteamFriends_SetRichPresence(ISteamFriends *self, const char *key, const char *value);
 void        SteamAPI_ISteamFriends_ActivateGameOverlay(ISteamFriends *self, const char *dialog);
+void        SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage(ISteamFriends *self, const char *url, int eMode);
 
 /* ISteamUserStats */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name);
