@@ -65,6 +65,15 @@ function steam_friends_set_rich_presence(string $key, ?string $value = null): bo
  */
 function steam_friends_activate_overlay(string $dialog): void {}
 
+/**
+ * Öffnet eine URL im Steam Overlay Browser.
+ *
+ * @param string $url Die zu öffnende URL
+ * @param bool $modal true für modales Fenster (blockiert Spiel), false für normales Overlay (Standard)
+ * @return void
+ */
+function steam_friends_activate_overlay_to_web_page(string $url, bool $modal = false): void {}
+
 /* ── steam_stats.c ── */
 
 /**

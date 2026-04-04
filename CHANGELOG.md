@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.2] - 2026-04-04
+
+### Added
+- ISteamFriends: `steam_friends_activate_overlay_to_web_page($url, $modal)` — opens a URL in the Steam Overlay browser
+
 ## [0.1.0] - 2026-03-09
 
 ### Added

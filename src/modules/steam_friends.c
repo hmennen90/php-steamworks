@@ -51,3 +51,23 @@ PHP_FUNCTION(steam_friends_activate_overlay)
 
     SteamAPI_ISteamFriends_ActivateGameOverlay(friends, ZSTR_VAL(dialog));
 }
+
+PHP_FUNCTION(steam_friends_activate_overlay_to_web_page)
+{
+    zend_string *url;
+    zend_bool modal = 0;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_STR(url)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(modal)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    if (!friends) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage(friends, ZSTR_VAL(url), modal ? 1 : 0);
+}

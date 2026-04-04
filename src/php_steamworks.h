@@ -27,6 +27,7 @@ PHP_FUNCTION(steam_user_get_steam_id);
 PHP_FUNCTION(steam_friends_get_name);
 PHP_FUNCTION(steam_friends_set_rich_presence);
 PHP_FUNCTION(steam_friends_activate_overlay);
+PHP_FUNCTION(steam_friends_activate_overlay_to_web_page);
 
 /* steam_stats.c */
 PHP_FUNCTION(steam_stats_set_achievement);

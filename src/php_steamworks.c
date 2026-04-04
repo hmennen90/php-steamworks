@@ -12,6 +12,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_two_strings, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_string_optional_bool, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, url, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, modal, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_one_long, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, id, IS_LONG, 0)
 ZEND_END_ARG_INFO()
@@ -44,6 +49,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_friends_get_name,          arginfo_steam_void)
     PHP_FE(steam_friends_set_rich_presence, arginfo_steam_two_strings)
     PHP_FE(steam_friends_activate_overlay,  arginfo_steam_one_string)
+    PHP_FE(steam_friends_activate_overlay_to_web_page, arginfo_steam_string_optional_bool)
 
     /* steam_stats.c */
     PHP_FE(steam_stats_set_achievement,     arginfo_steam_one_string)

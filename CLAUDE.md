@@ -194,6 +194,7 @@ steam_user_get_auth_ticket()
 steam_friends_get_name()        ← ISteamFriends
 steam_friends_set_rich_presence()
 steam_friends_activate_overlay()
+steam_friends_activate_overlay_to_web_page()
 
 steam_stats_set_achievement()   ← ISteamUserStats
 steam_stats_clear_achievement()
@@ -241,11 +242,12 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
 9. `steam_stats_find_leaderboard()` + `steam_stats_upload_score()` — Leaderboards
 10. `steam_friends_set_rich_presence()` — Rich Presence
 11. `steam_friends_activate_overlay()` — Steam Overlay
-12. `steam_apps_is_dlc_installed()` — DLC-Prüfung
+12. `steam_friends_activate_overlay_to_web_page()` — URL im Steam Overlay öffnen
+13. `steam_apps_is_dlc_installed()` — DLC-Prüfung
 
 ### Phase 3 — Optional
-13. ISteamUGC (Workshop) — nur wenn Mod-Support über Steam Workshop
-14. ISteamNetworkingMessages — nur für Multiplayer
+14. ISteamUGC (Workshop) — nur wenn Mod-Support über Steam Workshop
+15. ISteamNetworkingMessages — nur für Multiplayer
 
 ---
 
