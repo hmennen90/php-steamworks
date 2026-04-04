@@ -413,9 +413,15 @@ interface PlatformInterface {
 ## Workflow für neue Funktionen
 
 1. Steam-Funktionsname in `sdk/public/steam/steam_api_flat.h` nachschlagen
-2. PHP_FUNCTION in passendem `src/modules/steam_*.c` implementieren
-3. Deklaration in `src/php_steamworks.h` hinzufügen
-4. Registrierung in `src/php_steamworks.c` in der `steamworks_functions[]`-Tabelle
-5. Stub in `stubs/steamworks.php` ergänzen
-6. Test in `tests/` ergänzen
-7. Eintrag in `CHANGELOG.md`
+2. Deklaration in `src/steam_api_c.h` hinzufügen (flache C-API)
+3. PHP_FUNCTION in passendem `src/modules/steam_*.c` implementieren
+4. Deklaration in `src/php_steamworks.h` hinzufügen
+5. Registrierung in `src/php_steamworks.c` in der `steamworks_functions[]`-Tabelle (arginfo + PHP_FE)
+6. Stub in `stubs/steamworks.php` ergänzen
+7. Test in `tests/` ergänzen
+8. **Mock SDK aktualisieren** — CI baut gegen den Mock SDK, nicht die echte SDK:
+   - `ci/mock_sdk/public/steam/steam_api_flat.h` — Funktionsdeklaration
+   - `ci/mock_sdk/steam_api_mock.c` — No-Op-Implementierung
+9. **CI-Funktionsliste aktualisieren** — Neue Funktion in die `$functions`-Arrays
+   in `.github/workflows/ci.yml` eintragen (Unix- und Windows-Job)
+10. Eintrag in `CHANGELOG.md`
