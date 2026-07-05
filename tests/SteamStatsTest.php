@@ -38,4 +38,15 @@ class SteamStatsTest extends TestCase
     {
         $this->assertTrue(function_exists('steam_stats_set_float'));
     }
+
+    public function testIndicateAchievementProgressExists(): void
+    {
+        $this->assertTrue(function_exists('steam_stats_indicate_achievement_progress'));
+    }
+
+    public function testIndicateAchievementProgressReturnsBoolWithoutSteam(): void
+    {
+        // Mock/no-Steam environment: returns false, never fatals.
+        $this->assertIsBool(@steam_stats_indicate_achievement_progress('ACH_TEST', 47, 100));
+    }
 }

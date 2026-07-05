@@ -31,6 +31,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_stat_float, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, value, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_indicate_progress, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, cur_progress, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, max_progress, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_remote_file_write, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, filename, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
@@ -59,6 +65,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_stats_set_int,             arginfo_steam_stat_int)
     PHP_FE(steam_stats_get_float,           arginfo_steam_one_string)
     PHP_FE(steam_stats_set_float,           arginfo_steam_stat_float)
+    PHP_FE(steam_stats_indicate_achievement_progress, arginfo_steam_indicate_progress)
 
     /* steam_remote.c */
     PHP_FE(steam_remote_file_write,         arginfo_steam_remote_file_write)
@@ -77,6 +84,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_utils_get_app_id,          arginfo_steam_void)
     PHP_FE(steam_utils_is_overlay_enabled,  arginfo_steam_void)
     PHP_FE(steam_utils_get_country_code,    arginfo_steam_void)
+    PHP_FE(steam_utils_is_steam_deck,       arginfo_steam_void)
 
     PHP_FE_END
 };

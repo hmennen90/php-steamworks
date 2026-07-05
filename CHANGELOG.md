@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2026-07-05
+
+### Added
+- ISteamUtils: `steam_utils_is_steam_deck()` — wraps `IsSteamRunningOnSteamDeck`, for handheld-friendly defaults (fullscreen, larger UI scale)
+- ISteamUserStats: `steam_stats_indicate_achievement_progress($id, $cur, $max)` — wraps `IndicateAchievementProgress`, shows native "47 / 100" progress toasts for staged achievements. Requires a Progress Stat configured for the achievement in the partner backend; do not call with `$cur >= $max` (use `steam_stats_set_achievement()` there instead).
+
 ## [0.2.2] - 2026-04-04
 
 ### Added

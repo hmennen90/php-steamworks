@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.4.1"
+#define PHP_STEAMWORKS_VERSION  "0.5.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -37,6 +37,7 @@ PHP_FUNCTION(steam_stats_get_int);
 PHP_FUNCTION(steam_stats_set_int);
 PHP_FUNCTION(steam_stats_get_float);
 PHP_FUNCTION(steam_stats_set_float);
+PHP_FUNCTION(steam_stats_indicate_achievement_progress);
 
 /* steam_remote.c */
 PHP_FUNCTION(steam_remote_file_write);
@@ -55,5 +56,6 @@ PHP_FUNCTION(steam_apps_get_language);
 PHP_FUNCTION(steam_utils_get_app_id);
 PHP_FUNCTION(steam_utils_is_overlay_enabled);
 PHP_FUNCTION(steam_utils_get_country_code);
+PHP_FUNCTION(steam_utils_is_steam_deck);
 
 #endif /* PHP_STEAMWORKS_H */

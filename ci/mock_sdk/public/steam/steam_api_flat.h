@@ -49,6 +49,7 @@ bool SteamAPI_ISteamUserStats_GetStatInt32(ISteamUserStats *self, const char *na
 bool SteamAPI_ISteamUserStats_SetStatInt32(ISteamUserStats *self, const char *name, int32 data);
 bool SteamAPI_ISteamUserStats_GetStatFloat(ISteamUserStats *self, const char *name, float *data);
 bool SteamAPI_ISteamUserStats_SetStatFloat(ISteamUserStats *self, const char *name, float data);
+bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self, const char *name, uint32 cur_progress, uint32 max_progress);
 
 /* ISteamRemoteStorage */
 bool        SteamAPI_ISteamRemoteStorage_FileWrite(ISteamRemoteStorage *self, const char *file, const void *data, int32 size);
@@ -69,5 +70,6 @@ const char* SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *self);
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self);
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self);
+bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self);
 
 #endif /* STEAM_API_FLAT_H */

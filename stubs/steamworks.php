@@ -134,6 +134,21 @@ function steam_stats_get_float(string $name): float|false {}
  */
 function steam_stats_set_float(string $name, float $value): bool {}
 
+/**
+ * Zeigt dem Spieler eine Fortschritts-Benachrichtigung für ein noch nicht
+ * freigeschaltetes Achievement ("47 von 100").
+ *
+ * Voraussetzung: Das Achievement muss im Steamworks Partner-Backend mit einer
+ * Progress-Stat konfiguriert sein, sonst wird nichts angezeigt. NICHT mit
+ * $cur_progress >= $max_progress aufrufen — dort gehört steam_stats_set_achievement() hin.
+ *
+ * @param string $achievement_id Achievement-ID aus dem Steamworks Partner-Backend
+ * @param int $cur_progress Aktueller Fortschritt
+ * @param int $max_progress Zielwert
+ * @return bool true bei Erfolg
+ */
+function steam_stats_indicate_achievement_progress(string $achievement_id, int $cur_progress, int $max_progress): bool {}
+
 /* ── steam_remote.c ── */
 
 /**
@@ -229,3 +244,11 @@ function steam_utils_is_overlay_enabled(): bool {}
  * @return string|false Zwei-Buchstaben-Ländercode, false bei Fehler
  */
 function steam_utils_get_country_code(): string|false {}
+
+/**
+ * Prüft, ob das Spiel gerade auf einem Steam Deck läuft.
+ * Nützlich um handheld-freundliche Defaults zu setzen (Fullscreen, größerer UI-Scale).
+ *
+ * @return bool true wenn auf Steam Deck
+ */
+function steam_utils_is_steam_deck(): bool {}

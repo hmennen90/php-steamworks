@@ -131,3 +131,25 @@ PHP_FUNCTION(steam_stats_set_float)
 
     RETURN_BOOL(SteamAPI_ISteamUserStats_SetStatFloat(stats, ZSTR_VAL(name), (float)value));
 }
+
+PHP_FUNCTION(steam_stats_indicate_achievement_progress)
+{
+    zend_string *name;
+    zend_long cur_progress;
+    zend_long max_progress;
+
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+        Z_PARAM_STR(name)
+        Z_PARAM_LONG(cur_progress)
+        Z_PARAM_LONG(max_progress)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    RETURN_BOOL(SteamAPI_ISteamUserStats_IndicateAchievementProgress(
+        stats, ZSTR_VAL(name), (uint32)cur_progress, (uint32)max_progress));
+}
