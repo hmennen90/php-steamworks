@@ -83,6 +83,8 @@ static const zend_function_entry steamworks_functions[] = {
 
     /* steam_user.c */
     PHP_FE(steam_user_get_steam_id,         arginfo_steam_void)
+    PHP_FE(steam_user_is_logged_on,         arginfo_steam_void)
+    PHP_FE(steam_user_get_player_steam_level, arginfo_steam_void)
 
     /* steam_friends.c */
     PHP_FE(steam_friends_get_name,          arginfo_steam_void)
@@ -128,12 +130,22 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_apps_is_dlc_installed,     arginfo_steam_one_long)
     PHP_FE(steam_apps_get_app_id,           arginfo_steam_void)
     PHP_FE(steam_apps_get_language,         arginfo_steam_void)
+    PHP_FE(steam_apps_is_subscribed_app,    arginfo_steam_one_long)
+    PHP_FE(steam_apps_get_current_beta_name, arginfo_steam_void)
+    PHP_FE(steam_apps_get_earliest_purchase_time, arginfo_steam_one_long)
+    PHP_FE(steam_apps_get_installed_depots, arginfo_steam_one_long)
+    PHP_FE(steam_apps_get_dlc_count,        arginfo_steam_void)
+    PHP_FE(steam_apps_get_app_build_id,     arginfo_steam_void)
 
     /* steam_utils.c */
     PHP_FE(steam_utils_get_app_id,          arginfo_steam_void)
     PHP_FE(steam_utils_is_overlay_enabled,  arginfo_steam_void)
     PHP_FE(steam_utils_get_country_code,    arginfo_steam_void)
     PHP_FE(steam_utils_is_steam_deck,       arginfo_steam_void)
+    PHP_FE(steam_utils_get_steam_ui_language, arginfo_steam_void)
+    PHP_FE(steam_utils_get_server_real_time, arginfo_steam_void)
+    PHP_FE(steam_utils_get_current_battery_power, arginfo_steam_void)
+    PHP_FE(steam_utils_get_seconds_since_app_active, arginfo_steam_void)
 
     PHP_FE_END
 };

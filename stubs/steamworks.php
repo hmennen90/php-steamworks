@@ -50,6 +50,20 @@ function steam_run_callbacks(): void {}
  */
 function steam_user_get_steam_id(): int|false {}
 
+/**
+ * Prüft, ob der Nutzer aktuell bei Steam eingeloggt und online ist.
+ *
+ * @return bool true wenn eingeloggt
+ */
+function steam_user_is_logged_on(): bool {}
+
+/**
+ * Gibt das Steam-Level des Nutzers zurück.
+ *
+ * @return int|false Steam-Level, false bei Fehler
+ */
+function steam_user_get_player_steam_level(): int|false {}
+
 /* ── steam_friends.c ── */
 
 /**
@@ -373,6 +387,51 @@ function steam_apps_get_app_id(): int|false {}
  */
 function steam_apps_get_language(): string|false {}
 
+/**
+ * Prüft, ob der Nutzer eine bestimmte App/DLC besitzt.
+ *
+ * @param int $app_id App- oder DLC-ID
+ * @return bool true wenn abonniert/im Besitz
+ */
+function steam_apps_is_subscribed_app(int $app_id): bool {}
+
+/**
+ * Gibt den Namen der aktiven Beta-Branch zurück (falls das Spiel auf einer läuft).
+ *
+ * @return string|false Beta-Branch-Name, false wenn keine Beta aktiv
+ */
+function steam_apps_get_current_beta_name(): string|false {}
+
+/**
+ * Gibt den frühesten Kaufzeitpunkt einer App als Unix-Timestamp zurück.
+ *
+ * @param int $app_id App-ID
+ * @return int|false Unix-Timestamp, false bei Fehler
+ */
+function steam_apps_get_earliest_purchase_time(int $app_id): int|false {}
+
+/**
+ * Gibt die IDs der installierten Depots einer App zurück.
+ *
+ * @param int $app_id App-ID
+ * @return int[]|false Liste der Depot-IDs, false bei Fehler
+ */
+function steam_apps_get_installed_depots(int $app_id): array|false {}
+
+/**
+ * Gibt die Anzahl der DLCs zurück, die für die aktuelle App registriert sind.
+ *
+ * @return int|false Anzahl der DLCs, false bei Fehler
+ */
+function steam_apps_get_dlc_count(): int|false {}
+
+/**
+ * Gibt die Build-ID der aktuell installierten App zurück.
+ *
+ * @return int|false Build-ID, false bei Fehler
+ */
+function steam_apps_get_app_build_id(): int|false {}
+
 /* ── steam_utils.c ── */
 
 /**
@@ -403,3 +462,32 @@ function steam_utils_get_country_code(): string|false {}
  * @return bool true wenn auf Steam Deck
  */
 function steam_utils_is_steam_deck(): bool {}
+
+/**
+ * Gibt die Sprache der Steam-Client-UI zurück (kann von der Spielsprache abweichen).
+ *
+ * @return string|false Sprachcode (z.B. "english"), false bei Fehler
+ */
+function steam_utils_get_steam_ui_language(): string|false {}
+
+/**
+ * Gibt die aktuelle Steam-Server-Zeit als Unix-Timestamp zurück.
+ *
+ * @return int|false Unix-Timestamp, false bei Fehler
+ */
+function steam_utils_get_server_real_time(): int|false {}
+
+/**
+ * Gibt den Akkustand zurück: 0–100 = Prozent, 255 = am Netzteil.
+ * Nützlich, um auf Handhelds (Steam Deck) den Stromverbrauch anzupassen.
+ *
+ * @return int|false Akkustand, false bei Fehler
+ */
+function steam_utils_get_current_battery_power(): int|false {}
+
+/**
+ * Gibt die Sekunden seit der letzten Nutzer-Aktivität in der App zurück.
+ *
+ * @return int|false Sekunden, false bei Fehler
+ */
+function steam_utils_get_seconds_since_app_active(): int|false {}

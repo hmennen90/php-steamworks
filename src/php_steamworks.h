@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.7.0"
+#define PHP_STEAMWORKS_VERSION  "0.8.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -38,6 +38,8 @@ PHP_FUNCTION(steam_run_callbacks);
 
 /* steam_user.c */
 PHP_FUNCTION(steam_user_get_steam_id);
+PHP_FUNCTION(steam_user_is_logged_on);
+PHP_FUNCTION(steam_user_get_player_steam_level);
 
 /* steam_friends.c */
 PHP_FUNCTION(steam_friends_get_name);
@@ -80,11 +82,21 @@ PHP_FUNCTION(steam_apps_is_subscribed);
 PHP_FUNCTION(steam_apps_is_dlc_installed);
 PHP_FUNCTION(steam_apps_get_app_id);
 PHP_FUNCTION(steam_apps_get_language);
+PHP_FUNCTION(steam_apps_is_subscribed_app);
+PHP_FUNCTION(steam_apps_get_current_beta_name);
+PHP_FUNCTION(steam_apps_get_earliest_purchase_time);
+PHP_FUNCTION(steam_apps_get_installed_depots);
+PHP_FUNCTION(steam_apps_get_dlc_count);
+PHP_FUNCTION(steam_apps_get_app_build_id);
 
 /* steam_utils.c */
 PHP_FUNCTION(steam_utils_get_app_id);
 PHP_FUNCTION(steam_utils_is_overlay_enabled);
 PHP_FUNCTION(steam_utils_get_country_code);
 PHP_FUNCTION(steam_utils_is_steam_deck);
+PHP_FUNCTION(steam_utils_get_steam_ui_language);
+PHP_FUNCTION(steam_utils_get_server_real_time);
+PHP_FUNCTION(steam_utils_get_current_battery_power);
+PHP_FUNCTION(steam_utils_get_seconds_since_app_active);
 
 #endif /* PHP_STEAMWORKS_H */

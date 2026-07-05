@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0] - 2026-07-05
+
+### Added
+- **ISteamApps** (Phase 2d) — synchrone Getter:
+  - `steam_apps_is_subscribed_app($app_id)` — `BIsSubscribedApp`
+  - `steam_apps_get_current_beta_name()` — `GetCurrentBetaName` (string oder false)
+  - `steam_apps_get_earliest_purchase_time($app_id)` — `GetEarliestPurchaseUnixTime`
+  - `steam_apps_get_installed_depots($app_id)` — `GetInstalledDepots`, Array der Depot-IDs
+  - `steam_apps_get_dlc_count()` — `GetDLCCount`
+  - `steam_apps_get_app_build_id()` — `GetAppBuildId`
+- **ISteamUtils** (Phase 2d):
+  - `steam_utils_get_steam_ui_language()` — `GetSteamUILanguage`
+  - `steam_utils_get_server_real_time()` — `GetServerRealTime` (Unix-Timestamp)
+  - `steam_utils_get_current_battery_power()` — `GetCurrentBatteryPower` (0–100 %, 255 = Netzteil)
+  - `steam_utils_get_seconds_since_app_active()` — `GetSecondsSinceAppActive`
+- **ISteamUser** (Phase 2d):
+  - `steam_user_is_logged_on()` — `BLoggedOn`
+  - `steam_user_get_player_steam_level()` — `GetPlayerSteamLevel`
+
 ## [0.7.0] - 2026-07-05
 
 ### Added

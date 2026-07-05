@@ -38,7 +38,7 @@ RUN php -dextension=$EXT -m | grep -q steamworks \
 RUN php -dextension=$EXT -r "\
     \$functions = [\
       'steam_init', 'steam_shutdown', 'steam_run_callbacks',\
-      'steam_user_get_steam_id',\
+      'steam_user_get_steam_id', 'steam_user_is_logged_on', 'steam_user_get_player_steam_level',\
       'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay', 'steam_friends_activate_overlay_to_web_page',\
       'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',\
       'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',\
@@ -55,8 +55,13 @@ RUN php -dextension=$EXT -r "\
       'steam_remote_file_delete', 'steam_remote_file_list',\
       'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed',\
       'steam_apps_get_app_id', 'steam_apps_get_language',\
+      'steam_apps_is_subscribed_app', 'steam_apps_get_current_beta_name',\
+      'steam_apps_get_earliest_purchase_time', 'steam_apps_get_installed_depots',\
+      'steam_apps_get_dlc_count', 'steam_apps_get_app_build_id',\
       'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code',\
       'steam_utils_is_steam_deck',\
+      'steam_utils_get_steam_ui_language', 'steam_utils_get_server_real_time',\
+      'steam_utils_get_current_battery_power', 'steam_utils_get_seconds_since_app_active',\
     ];\
     \$ok = true;\
     foreach (\$functions as \$fn) { if (!function_exists(\$fn)) { echo \"MISSING: \$fn\n\"; \$ok = false; } }\

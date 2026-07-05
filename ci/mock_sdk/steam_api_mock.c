@@ -25,6 +25,8 @@ ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtil
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self) { return 0; }
+bool           SteamAPI_ISteamUser_BLoggedOn(ISteamUser *self) { return false; }
+int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self) { return 0; }
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self) { return "MockPlayer"; }
@@ -85,12 +87,28 @@ bool           SteamAPI_ISteamApps_BIsSubscribed(ISteamApps *self) { return fals
 bool           SteamAPI_ISteamApps_BIsDlcInstalled(ISteamApps *self, AppId_t dlc_id) { return false; }
 uint64_steamid SteamAPI_ISteamApps_GetAppOwner(ISteamApps *self) { return 0; }
 const char*    SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *self) { return "english"; }
+bool           SteamAPI_ISteamApps_BIsSubscribedApp(ISteamApps *self, AppId_t appid) { return false; }
+bool           SteamAPI_ISteamApps_GetCurrentBetaName(ISteamApps *self, char *name, int name_buffer_size) { return false; }
+uint32         SteamAPI_ISteamApps_GetEarliestPurchaseUnixTime(ISteamApps *self, AppId_t appid) { return 0; }
+uint32         SteamAPI_ISteamApps_GetInstalledDepots(ISteamApps *self, AppId_t appid, DepotId_t *depots, uint32 max_depots) {
+    /* Two deterministic depots so the array path is testable. */
+    uint32 n = 0;
+    if (depots && max_depots > 0) { depots[n++] = 1001; }
+    if (depots && max_depots > 1) { depots[n++] = 1002; }
+    return n;
+}
+int            SteamAPI_ISteamApps_GetDLCCount(ISteamApps *self) { return 0; }
+int            SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self) { return 10; }
 
 /* ISteamUtils */
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self) { return 480; }
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self) { return false; }
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self) { return "US"; }
 bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self) { return false; }
+const char* SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self) { return "english"; }
+uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self) { return 1609459200; } /* 2021-01-01 */
+uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self) { return 255; }   /* on AC power */
+uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self) { return 0; }
 
 /* Async CallResult plumbing — pretend every call completed successfully and
  * hand back a deterministic result struct matching the expected callback id. */

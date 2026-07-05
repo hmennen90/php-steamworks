@@ -99,6 +99,8 @@ ISteamUtils*         SteamAPI_SteamUtils_v010(void);
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
+bool           SteamAPI_ISteamUser_BLoggedOn(ISteamUser *self);
+int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self);
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);
@@ -143,12 +145,22 @@ bool        SteamAPI_ISteamApps_BIsSubscribed(ISteamApps *self);
 bool        SteamAPI_ISteamApps_BIsDlcInstalled(ISteamApps *self, AppId_t dlc_id);
 uint64_steamid SteamAPI_ISteamApps_GetAppOwner(ISteamApps *self);
 const char* SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *self);
+bool        SteamAPI_ISteamApps_BIsSubscribedApp(ISteamApps *self, AppId_t appid);
+bool        SteamAPI_ISteamApps_GetCurrentBetaName(ISteamApps *self, char *name, int name_buffer_size);
+uint32      SteamAPI_ISteamApps_GetEarliestPurchaseUnixTime(ISteamApps *self, AppId_t appid);
+uint32      SteamAPI_ISteamApps_GetInstalledDepots(ISteamApps *self, AppId_t appid, DepotId_t *depots, uint32 max_depots);
+int         SteamAPI_ISteamApps_GetDLCCount(ISteamApps *self);
+int         SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self);
 
 /* ISteamUtils */
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self);
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self);
+const char* SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self);
+uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self);
+uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);
+uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsAPICallCompleted(ISteamUtils *self, SteamAPICall_t call, bool *failed);
 bool        SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t call, void *callback, int callback_size, int callback_expected, bool *failed);
 
