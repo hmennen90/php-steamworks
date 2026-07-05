@@ -22,6 +22,11 @@
 - Gesamte v0.6.0–v0.8.0-API gegen echte Steamworks SDK 1.64 gegengeprüft:
   Accessor-Versionen (v023/v018/v013/v016/v009/v010), Flat-Signaturen,
   Leaderboard-Callback-IDs (1104–1106) und Struct-Feld-Layouts stimmen überein.
+- **Runtime gegen echtes Steam getestet** (Windows, ZTS/VS17-Build gegen die echte
+  `steam_api64`, App 480/Spacewar): `steam_init()` verbindet, alle synchronen Getter
+  liefern echte Werte, und der Async-Leaderboard-Roundtrip (find → poll → download →
+  entry) dekodiert echte Live-Daten korrekt (z.B. „Quickest Win" 97k Einträge,
+  Ränge 1–5) — bestätigt Callback-IDs und Struct-Packing auf Windows End-to-End.
 
 ## [0.8.0] - 2026-07-05
 
