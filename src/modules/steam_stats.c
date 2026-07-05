@@ -155,23 +155,10 @@ PHP_FUNCTION(steam_stats_indicate_achievement_progress)
 }
 
 /* ── Achievement read path ─────────────────────────────────────────────
- * All synchronous. Reading achievement/stat state requires the current user's
- * stats to be loaded first; modern SteamAPI_Init does this automatically, but
- * steam_stats_request_current_stats() is provided for explicit control.
+ * All synchronous. Modern SteamAPI_Init() loads the current user's stats and
+ * achievements automatically (the old RequestCurrentStats() was removed from
+ * the SDK), so these can be called directly after a successful steam_init().
  */
-
-PHP_FUNCTION(steam_stats_request_current_stats)
-{
-    ZEND_PARSE_PARAMETERS_NONE();
-
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
-    if (!stats) {
-        php_error_docref(NULL, E_WARNING, "Steam not initialized");
-        RETURN_FALSE;
-    }
-
-    RETURN_BOOL(SteamAPI_ISteamUserStats_RequestCurrentStats(stats));
-}
 
 PHP_FUNCTION(steam_stats_get_achievement)
 {

@@ -43,7 +43,7 @@ RUN php -dextension=$EXT -r "\
       'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',\
       'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',\
       'steam_stats_indicate_achievement_progress',\
-      'steam_stats_request_current_stats', 'steam_stats_get_achievement',\
+      'steam_stats_get_achievement',\
       'steam_stats_get_achievement_unlock_time', 'steam_stats_get_num_achievements',\
       'steam_stats_get_achievement_name', 'steam_stats_get_achievement_display_attribute',\
       'steam_stats_reset_all_stats',\

@@ -83,7 +83,7 @@ steam_shutdown();
 
 ## Available Functions
 
-55 functions across 7 Steamworks interfaces. Full signatures with docblocks live in
+54 functions across 6 Steamworks interfaces. Full signatures with docblocks live in
 [`stubs/steamworks.php`](stubs/steamworks.php) (IDE autocompletion).
 
 ### Core
@@ -111,7 +111,6 @@ steam_shutdown();
 - `steam_stats_get_float(string $name): float|false`
 - `steam_stats_set_float(string $name, float $value): bool`
 - `steam_stats_indicate_achievement_progress(string $id, int $cur, int $max): bool`
-- `steam_stats_request_current_stats(): bool`
 - `steam_stats_get_achievement(string $id): ?bool`
 - `steam_stats_get_achievement_unlock_time(string $id): ?int`
 - `steam_stats_get_num_achievements(): int|false`

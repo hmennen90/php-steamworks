@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.9.0] - 2026-07-05
+
+### Fixed
+- **Cross-Platform-ABI der CallResult-Structs:** Die Leaderboard-Result-Structs
+  nutzten fest `#pragma pack(8)`. Die echte SDK packt jedoch mit `pack(4)` auf
+  Linux/macOS/FreeBSD und nur `pack(8)` auf Windows. Dadurch hätte
+  `steam_get_call_result()` auf Linux/macOS die Felder von
+  `LeaderboardScoreUploaded_t` (uint8 zuerst) an falschen Offsets gelesen
+  (score/rank falsch). Jetzt plattform-abhängiges Packing wie in der SDK.
+  Gefunden bei der Verifikation gegen Steamworks SDK 1.64 (Mock kann diesen
+  Fall nicht fangen).
+
+### Removed
+- **`steam_stats_request_current_stats()`** — `RequestCurrentStats` wurde aus der
+  Steamworks SDK entfernt (in 1.64 auskommentiert) und hätte gegen die echte SDK
+  einen Linker-Fehler verursacht. Moderne `SteamAPI_Init()` lädt Stats/Achievements
+  ohnehin automatisch; Achievements können direkt nach `steam_init()` gelesen werden.
+
+### Verified
+- Gesamte v0.6.0–v0.8.0-API gegen echte Steamworks SDK 1.64 gegengeprüft:
+  Accessor-Versionen (v023/v018/v013/v016/v009/v010), Flat-Signaturen,
+  Leaderboard-Callback-IDs (1104–1106) und Struct-Feld-Layouts stimmen überein.
+
 ## [0.8.0] - 2026-07-05
 
 ### Added

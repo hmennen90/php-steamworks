@@ -101,7 +101,6 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_stats_get_float,           arginfo_steam_one_string)
     PHP_FE(steam_stats_set_float,           arginfo_steam_stat_float)
     PHP_FE(steam_stats_indicate_achievement_progress, arginfo_steam_indicate_progress)
-    PHP_FE(steam_stats_request_current_stats, arginfo_steam_void)
     PHP_FE(steam_stats_get_achievement,     arginfo_steam_one_string)
     PHP_FE(steam_stats_get_achievement_unlock_time, arginfo_steam_one_string)
     PHP_FE(steam_stats_get_num_achievements, arginfo_steam_void)

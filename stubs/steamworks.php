@@ -176,15 +176,6 @@ function steam_stats_set_float(string $name, float $value): bool {}
 function steam_stats_indicate_achievement_progress(string $achievement_id, int $cur_progress, int $max_progress): bool {}
 
 /**
- * Fordert die aktuellen Stats/Achievements des Nutzers vom Steam-Server an.
- * Modernes SteamAPI_Init macht das automatisch; diese Funktion gibt explizite
- * Kontrolle. Danach sind get_achievement()/get_int()/get_float() zuverlässig.
- *
- * @return bool true bei Erfolg
- */
-function steam_stats_request_current_stats(): bool {}
-
-/**
  * Prüft, ob ein Achievement freigeschaltet ist.
  *
  * @param string $achievement_id Achievement-ID

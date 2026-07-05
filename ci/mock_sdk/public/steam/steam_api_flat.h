@@ -46,8 +46,13 @@ enum {
     k_iCallback_LeaderboardScoreUploaded    = 1100 + 6,
 };
 
-/* CallResult structs — layout must match src/steam_api_c.h exactly */
+/* CallResult structs — layout must match src/steam_api_c.h and the real SDK.
+ * Same conditional packing as the SDK: pack(4) on Linux/macOS/FreeBSD, else pack(8). */
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#pragma pack(push, 4)
+#else
 #pragma pack(push, 8)
+#endif
 typedef struct {
     SteamLeaderboard_t m_hSteamLeaderboard;
     uint8_t            m_bLeaderboardFound;
@@ -117,7 +122,6 @@ bool SteamAPI_ISteamUserStats_SetStatInt32(ISteamUserStats *self, const char *na
 bool SteamAPI_ISteamUserStats_GetStatFloat(ISteamUserStats *self, const char *name, float *data);
 bool SteamAPI_ISteamUserStats_SetStatFloat(ISteamUserStats *self, const char *name, float data);
 bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self, const char *name, uint32 cur_progress, uint32 max_progress);
-bool        SteamAPI_ISteamUserStats_RequestCurrentStats(ISteamUserStats *self);
 bool        SteamAPI_ISteamUserStats_GetAchievement(ISteamUserStats *self, const char *name, bool *achieved);
 bool        SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(ISteamUserStats *self, const char *name, bool *achieved, uint32 *unlock_time);
 uint32      SteamAPI_ISteamUserStats_GetNumAchievements(ISteamUserStats *self);

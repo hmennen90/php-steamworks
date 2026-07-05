@@ -52,11 +52,6 @@ class SteamStatsTest extends TestCase
 
     /* ── Achievement read path ── */
 
-    public function testRequestCurrentStatsExists(): void
-    {
-        $this->assertTrue(function_exists('steam_stats_request_current_stats'));
-    }
-
     public function testGetAchievementExists(): void
     {
         $this->assertTrue(function_exists('steam_stats_get_achievement'));
@@ -85,12 +80,6 @@ class SteamStatsTest extends TestCase
     public function testResetAllStatsExists(): void
     {
         $this->assertTrue(function_exists('steam_stats_reset_all_stats'));
-    }
-
-    public function testRequestCurrentStatsReturnsBool(): void
-    {
-        // Mock returns true; a real build without Steam returns false. Never fatals.
-        $this->assertIsBool(@steam_stats_request_current_stats());
     }
 
     public function testGetAchievementReturnsBoolOrNull(): void

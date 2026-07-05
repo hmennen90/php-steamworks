@@ -46,7 +46,6 @@ bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self,
 
 /* ISteamUserStats — Achievement read path.
  * Deterministic values: 3 achievements, none unlocked, fixed display strings. */
-bool SteamAPI_ISteamUserStats_RequestCurrentStats(ISteamUserStats *self) { return true; }
 bool SteamAPI_ISteamUserStats_GetAchievement(ISteamUserStats *self, const char *name, bool *achieved) { if (achieved) { *achieved = false; } return true; }
 bool SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(ISteamUserStats *self, const char *name, bool *achieved, uint32 *unlock_time) { if (achieved) { *achieved = false; } if (unlock_time) { *unlock_time = 0; } return true; }
 uint32 SteamAPI_ISteamUserStats_GetNumAchievements(ISteamUserStats *self) { return 3; }
