@@ -43,6 +43,10 @@ RUN php -dextension=$EXT -r "\
       'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',\
       'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',\
       'steam_stats_indicate_achievement_progress',\
+      'steam_stats_find_leaderboard', 'steam_stats_find_or_create_leaderboard',\
+      'steam_stats_upload_score', 'steam_stats_download_leaderboard_entries',\
+      'steam_stats_get_downloaded_entry', 'steam_stats_get_leaderboard_entry_count',\
+      'steam_get_call_result',\
       'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists',\
       'steam_remote_file_delete', 'steam_remote_file_list',\
       'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed',\

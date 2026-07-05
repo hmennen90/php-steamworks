@@ -2,6 +2,18 @@
 // stubs/steamworks.php
 // AUTO-GENERATED — nicht manuell bearbeiten
 
+/* ── Leaderboard-Konstanten (ELeaderboard* aus der SDK) ── */
+const STEAM_LEADERBOARD_SORT_ASCENDING = 1;
+const STEAM_LEADERBOARD_SORT_DESCENDING = 2;
+const STEAM_LEADERBOARD_DISPLAY_NUMERIC = 1;
+const STEAM_LEADERBOARD_DISPLAY_TIME_SECONDS = 2;
+const STEAM_LEADERBOARD_DISPLAY_TIME_MILLISECONDS = 3;
+const STEAM_LEADERBOARD_UPLOAD_KEEP_BEST = 1;
+const STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE = 2;
+const STEAM_LEADERBOARD_DATA_GLOBAL = 0;
+const STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER = 1;
+const STEAM_LEADERBOARD_DATA_FRIENDS = 2;
+
 /* ── steam_init.c ── */
 
 /**
@@ -148,6 +160,85 @@ function steam_stats_set_float(string $name, float $value): bool {}
  * @return bool true bei Erfolg
  */
 function steam_stats_indicate_achievement_progress(string $achievement_id, int $cur_progress, int $max_progress): bool {}
+
+/* ── Leaderboards (asynchron via Handle + Poll) ── */
+
+/**
+ * Sucht ein Leaderboard anhand seines Namens (asynchron).
+ * Gibt ein Call-Handle zurück; das Ergebnis wird über steam_get_call_result()
+ * abgeholt (Typ "leaderboard_found").
+ *
+ * @param string $name Leaderboard-Name aus dem Steamworks Partner-Backend
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_stats_find_leaderboard(string $name): int|false {}
+
+/**
+ * Sucht ein Leaderboard oder erstellt es, falls es nicht existiert (asynchron).
+ *
+ * @param string $name Leaderboard-Name
+ * @param int $sort_method STEAM_LEADERBOARD_SORT_ASCENDING|STEAM_LEADERBOARD_SORT_DESCENDING
+ * @param int $display_type STEAM_LEADERBOARD_DISPLAY_NUMERIC|_TIME_SECONDS|_TIME_MILLISECONDS
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_stats_find_or_create_leaderboard(string $name, int $sort_method, int $display_type): int|false {}
+
+/**
+ * Lädt einen Score in ein Leaderboard hoch (asynchron).
+ * Ergebnis über steam_get_call_result() (Typ "score_uploaded").
+ *
+ * @param int $leaderboard Leaderboard-Handle (aus dem find-Ergebnis)
+ * @param int $score Der hochzuladende Score
+ * @param int $method STEAM_LEADERBOARD_UPLOAD_KEEP_BEST (Default) oder _FORCE_UPDATE
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST): int|false {}
+
+/**
+ * Lädt Leaderboard-Einträge herunter (asynchron).
+ * Ergebnis über steam_get_call_result() (Typ "scores_downloaded"); die einzelnen
+ * Einträge dann über steam_stats_get_downloaded_entry().
+ *
+ * @param int $leaderboard Leaderboard-Handle
+ * @param int $request STEAM_LEADERBOARD_DATA_GLOBAL|_GLOBAL_AROUND_USER|_FRIENDS
+ * @param int $range_start 1-basierter Startindex
+ * @param int $range_end 1-basierter Endindex
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_stats_download_leaderboard_entries(int $leaderboard, int $request, int $range_start, int $range_end): int|false {}
+
+/**
+ * Liest einen einzelnen heruntergeladenen Leaderboard-Eintrag (synchron).
+ * Erst nach erfolgreichem steam_stats_download_leaderboard_entries()-Poll gültig.
+ *
+ * @param int $entries Entries-Handle aus dem "scores_downloaded"-Ergebnis
+ * @param int $index 0-basierter Index innerhalb des heruntergeladenen Bereichs
+ * @return array{steam_id:int, global_rank:int, score:int, details:int}|null
+ */
+function steam_stats_get_downloaded_entry(int $entries, int $index): ?array {}
+
+/**
+ * Gibt die Gesamtzahl der Einträge eines Leaderboards zurück (synchron).
+ *
+ * @param int $leaderboard Leaderboard-Handle
+ * @return int Anzahl der Einträge
+ */
+function steam_stats_get_leaderboard_entry_count(int $leaderboard): int {}
+
+/* ── steam_async.c ── */
+
+/**
+ * Holt das Ergebnis eines asynchronen Steam-Calls ab (Poll).
+ * Jeden Frame aufrufen, bis nicht mehr null zurückkommt:
+ *   - null  → noch nicht fertig (erneut pollen) oder unbekanntes/verbrauchtes Handle
+ *   - false → Call ist fehlgeschlagen
+ *   - array → Ergebnis mit 'type'-Feld ("leaderboard_found", "score_uploaded",
+ *             "scores_downloaded"); das Handle ist danach verbraucht.
+ *
+ * @param int $handle Call-Handle einer asynchronen steam_*-Funktion
+ * @return array|false|null
+ */
+function steam_get_call_result(int $handle): array|false|null {}
 
 /* ── steam_remote.c ── */
 

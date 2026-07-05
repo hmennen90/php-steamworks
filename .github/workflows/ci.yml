@@ -48,6 +48,10 @@ jobs:
               'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store',
               'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float',
               'steam_stats_indicate_achievement_progress',
+              'steam_stats_find_leaderboard', 'steam_stats_find_or_create_leaderboard',
+              'steam_stats_upload_score', 'steam_stats_download_leaderboard_entries',
+              'steam_stats_get_downloaded_entry', 'steam_stats_get_leaderboard_entry_count',
+              'steam_get_call_result',
               'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists',
               'steam_remote_file_delete', 'steam_remote_file_list',
               'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed',
@@ -158,7 +162,7 @@ jobs:
       - name: Check all functions registered
         shell: cmd
         run: |
-          php -dextension=%EXT_DLL% -r "$functions = ['steam_init', 'steam_shutdown', 'steam_run_callbacks', 'steam_user_get_steam_id', 'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay', 'steam_friends_activate_overlay_to_web_page', 'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store', 'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float', 'steam_stats_indicate_achievement_progress', 'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists', 'steam_remote_file_delete', 'steam_remote_file_list', 'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed', 'steam_apps_get_app_id', 'steam_apps_get_language', 'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code', 'steam_utils_is_steam_deck']; $ok = true; foreach ($functions as $fn) { if (!function_exists($fn)) { echo 'MISSING: ' . $fn . PHP_EOL; $ok = false; } } if ($ok) echo 'All ' . count($functions) . ' functions registered.' . PHP_EOL; else exit(1);"
+          php -dextension=%EXT_DLL% -r "$functions = ['steam_init', 'steam_shutdown', 'steam_run_callbacks', 'steam_user_get_steam_id', 'steam_friends_get_name', 'steam_friends_set_rich_presence', 'steam_friends_activate_overlay', 'steam_friends_activate_overlay_to_web_page', 'steam_stats_set_achievement', 'steam_stats_clear_achievement', 'steam_stats_store', 'steam_stats_get_int', 'steam_stats_set_int', 'steam_stats_get_float', 'steam_stats_set_float', 'steam_stats_indicate_achievement_progress', 'steam_stats_find_leaderboard', 'steam_stats_find_or_create_leaderboard', 'steam_stats_upload_score', 'steam_stats_download_leaderboard_entries', 'steam_stats_get_downloaded_entry', 'steam_stats_get_leaderboard_entry_count', 'steam_get_call_result', 'steam_remote_file_write', 'steam_remote_file_read', 'steam_remote_file_exists', 'steam_remote_file_delete', 'steam_remote_file_list', 'steam_apps_is_subscribed', 'steam_apps_is_dlc_installed', 'steam_apps_get_app_id', 'steam_apps_get_language', 'steam_utils_get_app_id', 'steam_utils_is_overlay_enabled', 'steam_utils_get_country_code', 'steam_utils_is_steam_deck']; $ok = true; foreach ($functions as $fn) { if (!function_exists($fn)) { echo 'MISSING: ' . $fn . PHP_EOL; $ok = false; } } if ($ok) echo 'All ' . count($functions) . ' functions registered.' . PHP_EOL; else exit(1);"
 
       - name: Test steam_init returns false (no Steam running)
         shell: cmd

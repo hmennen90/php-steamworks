@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0] - 2026-07-05
+
+### Added
+- **Asynchrone CallResult-Infrastruktur (Handle + Poll):** `steam_get_call_result($handle)` holt das Ergebnis asynchroner Steam-Calls ab (`null` = pending/unbekannt, `false` = fehlgeschlagen, `array` mit `type`-Feld = fertig). Fundament für alle `SteamAPICall_t`-basierten APIs. Neues Modul `src/modules/steam_async.c`.
+- **ISteamUserStats: Leaderboards** (Phase 2) — asynchron, geben ein Call-Handle zurück:
+  - `steam_stats_find_leaderboard($name)` — `FindLeaderboard`
+  - `steam_stats_find_or_create_leaderboard($name, $sort, $display)` — `FindOrCreateLeaderboard`
+  - `steam_stats_upload_score($leaderboard, $score, $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST)` — `UploadLeaderboardScore`
+  - `steam_stats_download_leaderboard_entries($leaderboard, $request, $start, $end)` — `DownloadLeaderboardEntries`
+  - `steam_stats_get_downloaded_entry($entries, $index)` — synchroner Zugriff auf einen Eintrag (`GetDownloadedLeaderboardEntry`)
+  - `steam_stats_get_leaderboard_entry_count($leaderboard)` — synchron (`GetLeaderboardEntryCount`)
+- **Leaderboard-Konstanten:** `STEAM_LEADERBOARD_SORT_*`, `STEAM_LEADERBOARD_DISPLAY_*`, `STEAM_LEADERBOARD_UPLOAD_*`, `STEAM_LEADERBOARD_DATA_*`.
+
+### Notes
+- Score-`details`-Arrays (`int32[]`) sind in dieser Version noch nicht unterstützt (Follow-up).
+- Nicht gepollte Call-Handles verbleiben bis Prozessende im internen Registry (in CLI unkritisch).
+
 ## [0.5.0] - 2026-07-05
 
 ### Added

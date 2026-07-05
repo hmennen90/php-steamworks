@@ -42,6 +42,30 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_remote_file_write, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lb_find_or_create, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, sort_method, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, display_type, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lb_upload, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, leaderboard, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, score, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, method, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lb_download, 0, 0, 4)
+    ZEND_ARG_TYPE_INFO(0, leaderboard, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, request, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, range_start, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, range_end, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_two_longs, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, a, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, b, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 static const zend_function_entry steamworks_functions[] = {
     /* steam_init.c */
     PHP_FE(steam_init,                      arginfo_steam_void)
@@ -66,6 +90,15 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_stats_get_float,           arginfo_steam_one_string)
     PHP_FE(steam_stats_set_float,           arginfo_steam_stat_float)
     PHP_FE(steam_stats_indicate_achievement_progress, arginfo_steam_indicate_progress)
+    PHP_FE(steam_stats_find_leaderboard,    arginfo_steam_one_string)
+    PHP_FE(steam_stats_find_or_create_leaderboard, arginfo_steam_lb_find_or_create)
+    PHP_FE(steam_stats_upload_score,        arginfo_steam_lb_upload)
+    PHP_FE(steam_stats_download_leaderboard_entries, arginfo_steam_lb_download)
+    PHP_FE(steam_stats_get_downloaded_entry, arginfo_steam_two_longs)
+    PHP_FE(steam_stats_get_leaderboard_entry_count, arginfo_steam_one_long)
+
+    /* steam_async.c */
+    PHP_FE(steam_get_call_result,           arginfo_steam_one_long)
 
     /* steam_remote.c */
     PHP_FE(steam_remote_file_write,         arginfo_steam_remote_file_write)
@@ -99,11 +132,29 @@ PHP_MINFO_FUNCTION(steamworks)
 
 PHP_MINIT_FUNCTION(steamworks)
 {
+    steamworks_async_minit();
+
+    /* Leaderboard enum constants (mirror ELeaderboard* in the SDK). */
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_SORT_ASCENDING",  1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_SORT_DESCENDING", 2, CONST_CS | CONST_PERSISTENT);
+
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DISPLAY_NUMERIC",           1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DISPLAY_TIME_SECONDS",      2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DISPLAY_TIME_MILLISECONDS", 3, CONST_CS | CONST_PERSISTENT);
+
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_UPLOAD_KEEP_BEST",    1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE", 2, CONST_CS | CONST_PERSISTENT);
+
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_GLOBAL",             0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER", 1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_FRIENDS",            2, CONST_CS | CONST_PERSISTENT);
+
     return SUCCESS;
 }
 
 PHP_MSHUTDOWN_FUNCTION(steamworks)
 {
+    steamworks_async_mshutdown();
     return SUCCESS;
 }
 

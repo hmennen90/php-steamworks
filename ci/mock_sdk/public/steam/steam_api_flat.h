@@ -12,6 +12,71 @@
 /* Steam error message buffer */
 typedef char SteamErrMsg[1024];
 
+/* Leaderboard enums */
+typedef enum {
+    k_ELeaderboardSortMethodNone       = 0,
+    k_ELeaderboardSortMethodAscending  = 1,
+    k_ELeaderboardSortMethodDescending = 2,
+} ELeaderboardSortMethod;
+
+typedef enum {
+    k_ELeaderboardDisplayTypeNone             = 0,
+    k_ELeaderboardDisplayTypeNumeric          = 1,
+    k_ELeaderboardDisplayTypeTimeSeconds      = 2,
+    k_ELeaderboardDisplayTypeTimeMilliSeconds = 3,
+} ELeaderboardDisplayType;
+
+typedef enum {
+    k_ELeaderboardUploadScoreMethodNone        = 0,
+    k_ELeaderboardUploadScoreMethodKeepBest    = 1,
+    k_ELeaderboardUploadScoreMethodForceUpdate = 2,
+} ELeaderboardUploadScoreMethod;
+
+typedef enum {
+    k_ELeaderboardDataRequestGlobal           = 0,
+    k_ELeaderboardDataRequestGlobalAroundUser = 1,
+    k_ELeaderboardDataRequestFriends          = 2,
+    k_ELeaderboardDataRequestUsers            = 3,
+} ELeaderboardDataRequest;
+
+/* Callback IDs (must match src/steam_api_c.h and the real SDK) */
+enum {
+    k_iCallback_LeaderboardFindResult       = 1100 + 4,
+    k_iCallback_LeaderboardScoresDownloaded = 1100 + 5,
+    k_iCallback_LeaderboardScoreUploaded    = 1100 + 6,
+};
+
+/* CallResult structs — layout must match src/steam_api_c.h exactly */
+#pragma pack(push, 8)
+typedef struct {
+    SteamLeaderboard_t m_hSteamLeaderboard;
+    uint8_t            m_bLeaderboardFound;
+} LeaderboardFindResult_t;
+
+typedef struct {
+    uint8_t            m_bSuccess;
+    SteamLeaderboard_t m_hSteamLeaderboard;
+    int32              m_nScore;
+    uint8_t            m_bScoreChanged;
+    int                m_nGlobalRankNew;
+    int                m_nGlobalRankPrevious;
+} LeaderboardScoreUploaded_t;
+
+typedef struct {
+    SteamLeaderboard_t        m_hSteamLeaderboard;
+    SteamLeaderboardEntries_t m_hSteamLeaderboardEntries;
+    int                       m_cEntryCount;
+} LeaderboardScoresDownloaded_t;
+
+typedef struct {
+    CSteamID_t  m_steamIDUser;
+    int32       m_nGlobalRank;
+    int32       m_nScore;
+    int32       m_cDetails;
+    UGCHandle_t m_hUGC;
+} LeaderboardEntry_t;
+#pragma pack(pop)
+
 typedef enum {
     k_ESteamAPIInitResult_OK = 0,
     k_ESteamAPIInitResult_FailedGeneric = 1,
@@ -50,6 +115,12 @@ bool SteamAPI_ISteamUserStats_SetStatInt32(ISteamUserStats *self, const char *na
 bool SteamAPI_ISteamUserStats_GetStatFloat(ISteamUserStats *self, const char *name, float *data);
 bool SteamAPI_ISteamUserStats_SetStatFloat(ISteamUserStats *self, const char *name, float data);
 bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self, const char *name, uint32 cur_progress, uint32 max_progress);
+SteamAPICall_t SteamAPI_ISteamUserStats_FindLeaderboard(ISteamUserStats *self, const char *name);
+SteamAPICall_t SteamAPI_ISteamUserStats_FindOrCreateLeaderboard(ISteamUserStats *self, const char *name, ELeaderboardSortMethod sort, ELeaderboardDisplayType display);
+SteamAPICall_t SteamAPI_ISteamUserStats_UploadLeaderboardScore(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardUploadScoreMethod method, int32 score, const int32 *details, int details_count);
+SteamAPICall_t SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardDataRequest request, int range_start, int range_end);
+bool           SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *self, SteamLeaderboardEntries_t entries, int index, LeaderboardEntry_t *entry, int32 *details, int details_max);
+int            SteamAPI_ISteamUserStats_GetLeaderboardEntryCount(ISteamUserStats *self, SteamLeaderboard_t leaderboard);
 
 /* ISteamRemoteStorage */
 bool        SteamAPI_ISteamRemoteStorage_FileWrite(ISteamRemoteStorage *self, const char *file, const void *data, int32 size);
@@ -71,5 +142,7 @@ AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self);
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self);
+bool        SteamAPI_ISteamUtils_IsAPICallCompleted(ISteamUtils *self, SteamAPICall_t call, bool *failed);
+bool        SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t call, void *callback, int callback_size, int callback_expected, bool *failed);
 
 #endif /* STEAM_API_FLAT_H */

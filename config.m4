@@ -20,6 +20,7 @@ if test "$PHP_STEAMWORKS" != "no"; then
     src/modules/steam_user.c \
     src/modules/steam_friends.c \
     src/modules/steam_stats.c \
+    src/modules/steam_async.c \
     src/modules/steam_remote.c \
     src/modules/steam_apps.c \
     src/modules/steam_utils.c"

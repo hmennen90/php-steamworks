@@ -10,10 +10,26 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.5.0"
+#define PHP_STEAMWORKS_VERSION  "0.6.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
+
+/* ── Async CallResult infrastructure (steam_async.c) ───────────────────── */
+/* Kinds of pending SteamAPICall_t results the extension knows how to decode. */
+enum steamworks_call_kind {
+    STEAMWORKS_CALL_LEADERBOARD_FIND = 1, /* LeaderboardFindResult_t (also find_or_create) */
+    STEAMWORKS_CALL_SCORE_UPLOADED,       /* LeaderboardScoreUploaded_t */
+    STEAMWORKS_CALL_SCORES_DOWNLOADED,    /* LeaderboardScoresDownloaded_t */
+};
+
+void steamworks_async_minit(void);
+void steamworks_async_mshutdown(void);
+/* Track a pending async call so steam_get_call_result() can decode it later.
+   handle is a SteamAPICall_t (uint64). */
+void steamworks_register_call(uint64_t handle, enum steamworks_call_kind kind);
+
+PHP_FUNCTION(steam_get_call_result);
 
 /* steam_init.c */
 PHP_FUNCTION(steam_init);
@@ -38,6 +54,12 @@ PHP_FUNCTION(steam_stats_set_int);
 PHP_FUNCTION(steam_stats_get_float);
 PHP_FUNCTION(steam_stats_set_float);
 PHP_FUNCTION(steam_stats_indicate_achievement_progress);
+PHP_FUNCTION(steam_stats_find_leaderboard);
+PHP_FUNCTION(steam_stats_find_or_create_leaderboard);
+PHP_FUNCTION(steam_stats_upload_score);
+PHP_FUNCTION(steam_stats_download_leaderboard_entries);
+PHP_FUNCTION(steam_stats_get_downloaded_entry);
+PHP_FUNCTION(steam_stats_get_leaderboard_entry_count);
 
 /* steam_remote.c */
 PHP_FUNCTION(steam_remote_file_write);
