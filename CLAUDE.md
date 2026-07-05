@@ -34,7 +34,8 @@ php-steamworks/
 │   │   ├── steam_remote.c      ← ISteamRemoteStorage: Cloud Saves
 │   │   ├── steam_apps.c        ← ISteamApps: DLC, Beta, Language, AppID
 │   │   ├── steam_utils.c       ← ISteamUtils: Overlay, AppID, Country, Language
-│   │   └── steam_ugc.c         ← ISteamUGC: Workshop (Phase 2)
+│   │   └── steam_async.c       ← Async CallResults (Handle+Poll): steam_get_call_result
+│   │   (steam_ugc.c            ← ISteamUGC: Workshop — Phase 3, noch nicht angelegt)
 ├── stubs/
 │   └── steamworks.php          ← PHP-Stubs für IDE-Autocompletion (kein Runtime-Code)
 ├── tests/
@@ -226,7 +227,11 @@ steam_utils_get_country_code()
 
 ## Implementierungsreihenfolge (Priorität)
 
-### Phase 1 — Launch-kritisch
+**Stand v0.8.0: Phase 1 und Phase 2 vollständig implementiert (55 Funktionen).**
+Zusätzlich umgesetzt: asynchrone CallResult-Infrastruktur (`steam_get_call_result()`,
+`src/modules/steam_async.c`), Achievement-Lesepfad, sowie erweiterte Apps/Utils/User-Getter.
+
+### Phase 1 — Launch-kritisch ✅ erledigt
 Diese Funktionen werden für jeden Steam-Release benötigt:
 
 1. `steam_init()` — SteamAPI_Init
@@ -237,17 +242,23 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
 6. `steam_stats_set_achievement()` + `steam_stats_store()` — Achievements
 7. `steam_remote_file_write()` + `steam_remote_file_read()` — Cloud Saves
 
-### Phase 2 — Post-Launch
+### Phase 2 — Post-Launch ✅ erledigt
 8. `steam_stats_get/set_int/float()` — Statistiken
-9. `steam_stats_find_leaderboard()` + `steam_stats_upload_score()` — Leaderboards
+9. `steam_stats_find_leaderboard()` + `steam_stats_upload_score()` — Leaderboards (async)
 10. `steam_friends_set_rich_presence()` — Rich Presence
 11. `steam_friends_activate_overlay()` — Steam Overlay
 12. `steam_friends_activate_overlay_to_web_page()` — URL im Steam Overlay öffnen
 13. `steam_apps_is_dlc_installed()` — DLC-Prüfung
 
-### Phase 3 — Optional
-14. ISteamUGC (Workshop) — nur wenn Mod-Support über Steam Workshop
-15. ISteamNetworkingMessages — nur für Multiplayer
+### Phase 3 — Offen
+- **Auth-Tickets** (`steam_user_get_auth_session_ticket` / `get_auth_ticket_for_web_api`) — Server-/Backend-Auth für Online-Games; async, nutzt die vorhandene Handle+Poll-Infrastruktur
+- **ISteamFriends erweitern** — Freundesliste, Persona-State, Avatare
+- **ISteamUGC** (Workshop) — nur wenn Mod-Support über Steam Workshop
+- **ISteamNetworkingSockets/Messages** — nur für Multiplayer-Transport
+
+### Zurückgestellt (dokumentiert)
+- Score-`details`-Arrays (`int32[]`) bei Leaderboard-Upload/Download
+- Real-SDK-Verifikation: Callback-IDs (1104–1106) + Struct-Packing der CallResults beim ersten Build gegen die echte SDK gegenprüfen (Mock kann ABI-Abweichungen nicht fangen)
 
 ---
 

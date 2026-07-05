@@ -83,18 +83,24 @@ steam_shutdown();
 
 ## Available Functions
 
+55 functions across 7 Steamworks interfaces. Full signatures with docblocks live in
+[`stubs/steamworks.php`](stubs/steamworks.php) (IDE autocompletion).
+
 ### Core
 - `steam_init(): bool`
 - `steam_shutdown(): void`
-- `steam_run_callbacks(): void`
+- `steam_run_callbacks(): void` — call every frame
 
 ### User
 - `steam_user_get_steam_id(): int|false`
+- `steam_user_is_logged_on(): bool`
+- `steam_user_get_player_steam_level(): int|false`
 
 ### Friends
 - `steam_friends_get_name(): string|false`
 - `steam_friends_set_rich_presence(string $key, ?string $value = null): bool`
 - `steam_friends_activate_overlay(string $dialog): void`
+- `steam_friends_activate_overlay_to_web_page(string $url, bool $modal = false): void`
 
 ### Stats & Achievements
 - `steam_stats_set_achievement(string $id): bool`
@@ -104,6 +110,25 @@ steam_shutdown();
 - `steam_stats_set_int(string $name, int $value): bool`
 - `steam_stats_get_float(string $name): float|false`
 - `steam_stats_set_float(string $name, float $value): bool`
+- `steam_stats_indicate_achievement_progress(string $id, int $cur, int $max): bool`
+- `steam_stats_request_current_stats(): bool`
+- `steam_stats_get_achievement(string $id): ?bool`
+- `steam_stats_get_achievement_unlock_time(string $id): ?int`
+- `steam_stats_get_num_achievements(): int|false`
+- `steam_stats_get_achievement_name(int $index): string|false`
+- `steam_stats_get_achievement_display_attribute(string $id, string $key): string|false`
+- `steam_stats_reset_all_stats(bool $achievements_too = false): bool`
+
+### Leaderboards (async — see below)
+- `steam_stats_find_leaderboard(string $name): int|false`
+- `steam_stats_find_or_create_leaderboard(string $name, int $sort, int $display): int|false`
+- `steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST): int|false`
+- `steam_stats_download_leaderboard_entries(int $leaderboard, int $request, int $start, int $end): int|false`
+- `steam_stats_get_downloaded_entry(int $entries, int $index): ?array`
+- `steam_stats_get_leaderboard_entry_count(int $leaderboard): int`
+
+### Async CallResults
+- `steam_get_call_result(int $handle): array|false|null` — poll the result of an async call (`null` = pending, `false` = failed, `array` = result with a `type` field)
 
 ### Remote Storage (Cloud Saves)
 - `steam_remote_file_write(string $filename, string $data): bool`
@@ -117,11 +142,49 @@ steam_shutdown();
 - `steam_apps_is_dlc_installed(int $dlc_id): bool`
 - `steam_apps_get_app_id(): int|false`
 - `steam_apps_get_language(): string|false`
+- `steam_apps_is_subscribed_app(int $app_id): bool`
+- `steam_apps_get_current_beta_name(): string|false`
+- `steam_apps_get_earliest_purchase_time(int $app_id): int|false`
+- `steam_apps_get_installed_depots(int $app_id): array|false`
+- `steam_apps_get_dlc_count(): int|false`
+- `steam_apps_get_app_build_id(): int|false`
 
 ### Utils
 - `steam_utils_get_app_id(): int|false`
 - `steam_utils_is_overlay_enabled(): bool`
 - `steam_utils_get_country_code(): string|false`
+- `steam_utils_is_steam_deck(): bool`
+- `steam_utils_get_steam_ui_language(): string|false`
+- `steam_utils_get_server_real_time(): int|false`
+- `steam_utils_get_current_battery_power(): int|false` — 0–100 %, 255 = on AC power
+- `steam_utils_get_seconds_since_app_active(): int|false`
+
+## Leaderboards & async calls
+
+Leaderboard calls (and other `SteamAPICall_t`-based APIs) are **asynchronous**: they
+return an integer handle. Poll `steam_get_call_result($handle)` each frame until it
+stops returning `null`:
+
+```php
+$handle = steam_stats_find_leaderboard('HighScores');
+do {
+    steam_run_callbacks();
+    $result = steam_get_call_result($handle);
+    usleep(16667);
+} while ($result === null);
+
+// $result === ['type' => 'leaderboard_found', 'found' => true, 'leaderboard' => 42]
+$leaderboard = $result['leaderboard'];
+steam_stats_upload_score($leaderboard, 1500, STEAM_LEADERBOARD_UPLOAD_KEEP_BEST);
+```
+
+See [`examples/leaderboard.php`](examples/leaderboard.php) for a full round-trip.
+
+### Constants
+- Sort: `STEAM_LEADERBOARD_SORT_ASCENDING`, `STEAM_LEADERBOARD_SORT_DESCENDING`
+- Display: `STEAM_LEADERBOARD_DISPLAY_NUMERIC`, `STEAM_LEADERBOARD_DISPLAY_TIME_SECONDS`, `STEAM_LEADERBOARD_DISPLAY_TIME_MILLISECONDS`
+- Upload: `STEAM_LEADERBOARD_UPLOAD_KEEP_BEST`, `STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE`
+- Download: `STEAM_LEADERBOARD_DATA_GLOBAL`, `STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER`, `STEAM_LEADERBOARD_DATA_FRIENDS`
 
 ## License
 
