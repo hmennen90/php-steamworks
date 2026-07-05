@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.6.0"
+#define PHP_STEAMWORKS_VERSION  "0.7.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -54,6 +54,13 @@ PHP_FUNCTION(steam_stats_set_int);
 PHP_FUNCTION(steam_stats_get_float);
 PHP_FUNCTION(steam_stats_set_float);
 PHP_FUNCTION(steam_stats_indicate_achievement_progress);
+PHP_FUNCTION(steam_stats_request_current_stats);
+PHP_FUNCTION(steam_stats_get_achievement);
+PHP_FUNCTION(steam_stats_get_achievement_unlock_time);
+PHP_FUNCTION(steam_stats_get_num_achievements);
+PHP_FUNCTION(steam_stats_get_achievement_name);
+PHP_FUNCTION(steam_stats_get_achievement_display_attribute);
+PHP_FUNCTION(steam_stats_reset_all_stats);
 PHP_FUNCTION(steam_stats_find_leaderboard);
 PHP_FUNCTION(steam_stats_find_or_create_leaderboard);
 PHP_FUNCTION(steam_stats_upload_score);

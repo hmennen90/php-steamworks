@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0] - 2026-07-05
+
+### Added
+- **ISteamUserStats: Achievement-Lesepfad** (Phase 2a) — alle synchron:
+  - `steam_stats_request_current_stats()` — `RequestCurrentStats`, lädt Stats/Achievements des Nutzers (moderne Inits tun das automatisch, hier explizit)
+  - `steam_stats_get_achievement($id)` — `GetAchievement`, `?bool` (true/false/null bei unbekannt)
+  - `steam_stats_get_achievement_unlock_time($id)` — `GetAchievementAndUnlockTime`, Unix-Timestamp oder null
+  - `steam_stats_get_num_achievements()` — `GetNumAchievements`
+  - `steam_stats_get_achievement_name($index)` — `GetAchievementName`, zum Enumerieren
+  - `steam_stats_get_achievement_display_attribute($id, $key)` — `GetAchievementDisplayAttribute` ("name"/"desc"/"hidden")
+  - `steam_stats_reset_all_stats($achievements_too = false)` — `ResetAllStats`
+
 ## [0.6.0] - 2026-07-05
 
 ### Added

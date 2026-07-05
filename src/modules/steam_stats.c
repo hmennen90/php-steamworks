@@ -154,6 +154,148 @@ PHP_FUNCTION(steam_stats_indicate_achievement_progress)
         stats, ZSTR_VAL(name), (uint32)cur_progress, (uint32)max_progress));
 }
 
+/* ── Achievement read path ─────────────────────────────────────────────
+ * All synchronous. Reading achievement/stat state requires the current user's
+ * stats to be loaded first; modern SteamAPI_Init does this automatically, but
+ * steam_stats_request_current_stats() is provided for explicit control.
+ */
+
+PHP_FUNCTION(steam_stats_request_current_stats)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    RETURN_BOOL(SteamAPI_ISteamUserStats_RequestCurrentStats(stats));
+}
+
+PHP_FUNCTION(steam_stats_get_achievement)
+{
+    zend_string *name;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STR(name)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_NULL();
+    }
+
+    bool achieved = false;
+    if (!SteamAPI_ISteamUserStats_GetAchievement(stats, ZSTR_VAL(name), &achieved)) {
+        /* Unknown achievement id or stats not loaded yet. */
+        RETURN_NULL();
+    }
+
+    RETURN_BOOL(achieved);
+}
+
+PHP_FUNCTION(steam_stats_get_achievement_unlock_time)
+{
+    zend_string *name;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STR(name)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_NULL();
+    }
+
+    bool   achieved = false;
+    uint32 unlock_time = 0;
+    if (!SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(
+            stats, ZSTR_VAL(name), &achieved, &unlock_time) || !achieved) {
+        /* Not unlocked (or unknown) → no unlock time. */
+        RETURN_NULL();
+    }
+
+    RETURN_LONG((zend_long)unlock_time);
+}
+
+PHP_FUNCTION(steam_stats_get_num_achievements)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    RETURN_LONG((zend_long)SteamAPI_ISteamUserStats_GetNumAchievements(stats));
+}
+
+PHP_FUNCTION(steam_stats_get_achievement_name)
+{
+    zend_long index;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(index)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    const char *name = SteamAPI_ISteamUserStats_GetAchievementName(stats, (uint32)index);
+    if (!name || name[0] == '\0') {
+        /* Out-of-range index. */
+        RETURN_FALSE;
+    }
+
+    RETURN_STRING(name);
+}
+
+PHP_FUNCTION(steam_stats_get_achievement_display_attribute)
+{
+    zend_string *name;
+    zend_string *key;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_STR(name)
+        Z_PARAM_STR(key)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    const char *value = SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(
+        stats, ZSTR_VAL(name), ZSTR_VAL(key));
+    RETURN_STRING(value ? value : "");
+}
+
+PHP_FUNCTION(steam_stats_reset_all_stats)
+{
+    zend_bool achievements_too = 0;
+
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(achievements_too)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    RETURN_BOOL(SteamAPI_ISteamUserStats_ResetAllStats(stats, (bool)achievements_too));
+}
+
 /* ── Leaderboards ──────────────────────────────────────────────────────
  * These are asynchronous: each returns a SteamAPICall_t handle (as int).
  * Poll steam_get_call_result($handle) each frame until it stops returning null.

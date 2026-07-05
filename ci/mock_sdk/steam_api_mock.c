@@ -42,6 +42,16 @@ bool SteamAPI_ISteamUserStats_GetStatFloat(ISteamUserStats *self, const char *na
 bool SteamAPI_ISteamUserStats_SetStatFloat(ISteamUserStats *self, const char *name, float data)   { return false; }
 bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self, const char *name, uint32 cur_progress, uint32 max_progress) { return false; }
 
+/* ISteamUserStats — Achievement read path.
+ * Deterministic values: 3 achievements, none unlocked, fixed display strings. */
+bool SteamAPI_ISteamUserStats_RequestCurrentStats(ISteamUserStats *self) { return true; }
+bool SteamAPI_ISteamUserStats_GetAchievement(ISteamUserStats *self, const char *name, bool *achieved) { if (achieved) { *achieved = false; } return true; }
+bool SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(ISteamUserStats *self, const char *name, bool *achieved, uint32 *unlock_time) { if (achieved) { *achieved = false; } if (unlock_time) { *unlock_time = 0; } return true; }
+uint32 SteamAPI_ISteamUserStats_GetNumAchievements(ISteamUserStats *self) { return 3; }
+const char* SteamAPI_ISteamUserStats_GetAchievementName(ISteamUserStats *self, uint32 achievement) { return achievement < 3 ? "ACH_MOCK" : ""; }
+const char* SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(ISteamUserStats *self, const char *name, const char *key) { return "Mock Achievement"; }
+bool SteamAPI_ISteamUserStats_ResetAllStats(ISteamUserStats *self, bool achievements_too) { return true; }
+
 /* ISteamUserStats — Leaderboards (async).
  * Return deterministic fake handles so the find->poll->result flow is testable:
  *   1 = find/find_or_create, 2 = upload, 3 = download. Leaderboard handle = 42. */

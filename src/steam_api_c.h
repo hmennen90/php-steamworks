@@ -144,6 +144,15 @@ bool SteamAPI_ISteamUserStats_GetStatFloat(ISteamUserStats *self, const char *na
 bool SteamAPI_ISteamUserStats_SetStatFloat(ISteamUserStats *self, const char *name, float data);
 bool SteamAPI_ISteamUserStats_IndicateAchievementProgress(ISteamUserStats *self, const char *name, uint32 cur_progress, uint32 max_progress);
 
+/* ── ISteamUserStats: Achievement read path ────────────────────────────── */
+bool        SteamAPI_ISteamUserStats_RequestCurrentStats(ISteamUserStats *self);
+bool        SteamAPI_ISteamUserStats_GetAchievement(ISteamUserStats *self, const char *name, bool *achieved);
+bool        SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(ISteamUserStats *self, const char *name, bool *achieved, uint32 *unlock_time);
+uint32      SteamAPI_ISteamUserStats_GetNumAchievements(ISteamUserStats *self);
+const char *SteamAPI_ISteamUserStats_GetAchievementName(ISteamUserStats *self, uint32 achievement);
+const char *SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(ISteamUserStats *self, const char *name, const char *key);
+bool        SteamAPI_ISteamUserStats_ResetAllStats(ISteamUserStats *self, bool achievements_too);
+
 /* ── ISteamUserStats: Leaderboards (async via SteamAPICall_t) ──────────── */
 SteamAPICall_t SteamAPI_ISteamUserStats_FindLeaderboard(ISteamUserStats *self, const char *name);
 SteamAPICall_t SteamAPI_ISteamUserStats_FindOrCreateLeaderboard(ISteamUserStats *self, const char *name, ELeaderboardSortMethod sort, ELeaderboardDisplayType display);

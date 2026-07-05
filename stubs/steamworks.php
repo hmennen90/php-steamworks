@@ -161,6 +161,66 @@ function steam_stats_set_float(string $name, float $value): bool {}
  */
 function steam_stats_indicate_achievement_progress(string $achievement_id, int $cur_progress, int $max_progress): bool {}
 
+/**
+ * Fordert die aktuellen Stats/Achievements des Nutzers vom Steam-Server an.
+ * Modernes SteamAPI_Init macht das automatisch; diese Funktion gibt explizite
+ * Kontrolle. Danach sind get_achievement()/get_int()/get_float() zuverlässig.
+ *
+ * @return bool true bei Erfolg
+ */
+function steam_stats_request_current_stats(): bool {}
+
+/**
+ * Prüft, ob ein Achievement freigeschaltet ist.
+ *
+ * @param string $achievement_id Achievement-ID
+ * @return bool|null true=freigeschaltet, false=nicht freigeschaltet,
+ *                   null bei unbekannter ID / Stats nicht geladen
+ */
+function steam_stats_get_achievement(string $achievement_id): ?bool {}
+
+/**
+ * Gibt den Unlock-Zeitpunkt eines Achievements als Unix-Timestamp zurück.
+ *
+ * @param string $achievement_id Achievement-ID
+ * @return int|null Unix-Timestamp, oder null wenn nicht freigeschaltet/unbekannt
+ */
+function steam_stats_get_achievement_unlock_time(string $achievement_id): ?int {}
+
+/**
+ * Gibt die Gesamtzahl der im Backend konfigurierten Achievements zurück.
+ * In Kombination mit steam_stats_get_achievement_name() zum Enumerieren.
+ *
+ * @return int|false Anzahl, false bei Fehler
+ */
+function steam_stats_get_num_achievements(): int|false {}
+
+/**
+ * Gibt die interne API-ID eines Achievements über seinen Index zurück.
+ *
+ * @param int $index 0-basierter Index (< steam_stats_get_num_achievements())
+ * @return string|false Achievement-API-ID, false bei ungültigem Index
+ */
+function steam_stats_get_achievement_name(int $index): string|false {}
+
+/**
+ * Liest ein Anzeige-Attribut eines Achievements aus dem Backend.
+ *
+ * @param string $achievement_id Achievement-ID
+ * @param string $key "name" (Anzeigename), "desc" (Beschreibung) oder "hidden" ("0"/"1")
+ * @return string|false Attributwert (leerer String bei unbekanntem Key), false bei Fehler
+ */
+function steam_stats_get_achievement_display_attribute(string $achievement_id, string $key): string|false {}
+
+/**
+ * Setzt alle Stats (und optional Achievements) des Nutzers zurück.
+ * Vorsicht: irreversibel für den Nutzer. Primär zum Testen gedacht.
+ *
+ * @param bool $achievements_too true, um auch Achievements zurückzusetzen
+ * @return bool true bei Erfolg
+ */
+function steam_stats_reset_all_stats(bool $achievements_too = false): bool {}
+
 /* ── Leaderboards (asynchron via Handle + Poll) ── */
 
 /**
