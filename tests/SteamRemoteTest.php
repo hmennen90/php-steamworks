@@ -28,4 +28,18 @@ class SteamRemoteTest extends TestCase
     {
         $this->assertTrue(function_exists('steam_remote_file_list'));
     }
+
+    public function testFileExistsReturnsBoolWithoutSteam(): void
+    {
+        // Mock/no-Steam environment: returns false, never fatals.
+        $this->assertIsBool(@steam_remote_file_exists('save.dat'));
+    }
+
+    public function testFileListReturnsArrayOrFalse(): void
+    {
+        // Mock build returns an (empty) array; a real build without Steam
+        // returns false. Either way it must never fatal.
+        $list = @steam_remote_file_list();
+        $this->assertTrue(is_array($list) || $list === false);
+    }
 }

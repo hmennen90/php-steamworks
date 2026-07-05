@@ -1,0 +1,40 @@
+# Keep the build context small and reproducible — the Dockerfile builds from a
+# clean checkout, so exclude local build artifacts and anything not needed.
+
+.git
+.github
+.idea
+
+# Real Steamworks SDK (NDA) — the Docker build uses the mock SDK only.
+sdk/public/
+sdk/glmgr/
+sdk/tools/
+sdk/steamworksexample/
+sdk/redistributable_bin/
+
+# Build artifacts (regenerated inside the container)
+*.lo
+*.la
+*.o
+*.so
+*.dylib
+*.dll
+.libs/
+modules/
+build/
+autom4te.cache/
+config.h
+config.h.in
+config.log
+config.nice
+config.status
+configure
+libtool
+Makefile*
+phpunit.phar
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
