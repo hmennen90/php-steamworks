@@ -27,6 +27,8 @@ typedef uint64_t TimelineEventHandle_t;
 typedef uint32_t HAuthTicket;
 typedef uint64_t UGCQueryHandle_t;
 typedef uint64_t PublishedFileId_t;
+typedef uint32_t HSteamNetConnection;
+typedef uint32_t HSteamListenSocket;
 
 typedef void ISteamUser;
 typedef void ISteamFriends;
@@ -36,5 +38,7 @@ typedef void ISteamApps;
 typedef void ISteamUtils;
 typedef void ISteamUGC;
 typedef void ISteamTimeline;
+typedef void ISteamNetworkingSockets;
+typedef void ISteamNetworkingUtils;
 
 #endif /* STEAM_API_H */

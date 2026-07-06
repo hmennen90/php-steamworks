@@ -23,6 +23,8 @@ typedef void ISteamApps;
 typedef void ISteamUtils;
 typedef void ISteamTimeline;
 typedef void ISteamUGC;
+typedef void ISteamNetworkingSockets;
+typedef void ISteamNetworkingUtils;
 
 /* SDK typedefs */
 typedef uint32_t AppId_t;
@@ -42,6 +44,8 @@ typedef uint64_t TimelineEventHandle_t;   /* ISteamTimeline event handle */
 typedef uint32_t HAuthTicket;             /* ISteamUser auth ticket handle */
 typedef uint64_t UGCQueryHandle_t;        /* ISteamUGC query handle */
 typedef uint64_t PublishedFileId_t;       /* Workshop item id */
+typedef uint32_t HSteamNetConnection;     /* ISteamNetworkingSockets connection */
+typedef uint32_t HSteamListenSocket;      /* ISteamNetworkingSockets listen socket */
 
 /* Leaderboard enums (values match the SDK exactly) */
 typedef enum {
@@ -122,7 +126,27 @@ enum {
    k_iSteamUserCallbacks base = 100 (verified vs SDK 1.64). */
 enum {
     k_iCallback_GetTicketForWebApiResponse = 100 + 68, /* 168 */
+    /* k_iSteamNetworkingSocketsCallbacks base = 1220. */
+    k_iCallback_SteamNetConnectionStatusChanged = 1220 + 1, /* 1221 */
 };
+
+/* SteamNetworkingMessage_t / connection-status field offsets (verified vs SDK 1.64,
+   Windows/pack(8)). We read these structs via byte offsets to avoid embedding the
+   large SDK layouts. */
+#define STEAMWORKS_NETIDENTITY_SIZE      136
+#define STEAMWORKS_NETMSG_DATA_OFF       0    /* void* m_pData */
+#define STEAMWORKS_NETMSG_SIZE_OFF       8    /* int m_cbSize */
+#define STEAMWORKS_NETMSG_CONN_OFF       12   /* uint32 m_conn */
+#define STEAMWORKS_NETMSG_IDENTITY_OFF   16   /* SteamNetworkingIdentity m_identityPeer */
+#define STEAMWORKS_NETMSG_MSGNUM_OFF     168  /* int64 m_nMessageNumber */
+#define STEAMWORKS_NETMSG_FLAGS_OFF      196  /* int m_nFlags */
+#define STEAMWORKS_NETCB_CONN_OFF        0    /* uint32 m_hConn */
+#define STEAMWORKS_NETCB_IDENTITY_OFF    8    /* m_info.m_identityRemote */
+#define STEAMWORKS_NETCB_NEWSTATE_OFF    184  /* m_info.m_eState */
+#define STEAMWORKS_NETCB_OLDSTATE_OFF    704  /* m_eOldState */
+/* Send flags. */
+#define STEAMWORKS_NET_SEND_UNRELIABLE   0
+#define STEAMWORKS_NET_SEND_RELIABLE     8
 
 /* CallResult structs — layout must match the SDK's callback packing exactly.
  * The SDK (steamclientpublic.h) uses pack(4) on Linux/macOS/FreeBSD and pack(8)
@@ -357,5 +381,25 @@ bool   SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t
 bool   SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority);
 
 ISteamUGC *SteamAPI_SteamUGC_v021(void);
+
+/* ── ISteamNetworkingSockets / Utils (P2P messaging core) ──────────────────
+ * Verified against Steamworks SDK 1.64. identity/options/message args are opaque
+ * pointers here (we build/read them via SteamNetworkingIdentity_* helpers and the
+ * STEAMWORKS_NETMSG_* offsets above). ConnectP2P takes the identity by reference,
+ * which is a pointer at the flat ABI level. */
+ISteamNetworkingSockets *SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void);
+ISteamNetworkingUtils   *SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void);
+
+HSteamListenSocket  SteamAPI_ISteamNetworkingSockets_CreateListenSocketP2P(ISteamNetworkingSockets *self, int local_virtual_port, int n_options, const void *options);
+HSteamNetConnection SteamAPI_ISteamNetworkingSockets_ConnectP2P(ISteamNetworkingSockets *self, const void *identity_remote, int remote_virtual_port, int n_options, const void *options);
+int  SteamAPI_ISteamNetworkingSockets_AcceptConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn);
+bool SteamAPI_ISteamNetworkingSockets_CloseConnection(ISteamNetworkingSockets *self, HSteamNetConnection peer, int reason, const char *debug, bool enable_linger);
+int  SteamAPI_ISteamNetworkingSockets_SendMessageToConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, const void *data, uint32 cb_data, int send_flags, int64_t *out_message_number);
+int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, void **out_messages, int max_messages);
+
+void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils *self);
+void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id);
+uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity);
+void SteamAPI_SteamNetworkingMessage_t_Release(void *message);
 
 #endif /* STEAM_API_C_H */

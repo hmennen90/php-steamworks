@@ -25,6 +25,8 @@ ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void) { return (ISteamRemo
 ISteamApps*          SteamAPI_SteamApps_v009(void)          { return (ISteamApps*)&mock_instance; }
 ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtils*)&mock_instance; }
 ISteamUGC*           SteamAPI_SteamUGC_v021(void)           { return (ISteamUGC*)&mock_instance; }
+ISteamNetworkingSockets* SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void) { return (ISteamNetworkingSockets*)&mock_instance; }
+ISteamNetworkingUtils*   SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void)   { return (ISteamNetworkingUtils*)&mock_instance; }
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self) { return 0; }
@@ -277,3 +279,16 @@ bool SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t f
     return true;
 }
 bool SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority) { return true; }
+
+/* ISteamNetworkingSockets / Utils — deterministic stubs. Fake handles; no
+ * messages delivered (round-trip P2P needs a real relay + peer). */
+HSteamListenSocket  SteamAPI_ISteamNetworkingSockets_CreateListenSocketP2P(ISteamNetworkingSockets *self, int local_virtual_port, int n_options, const void *options) { return 30; }
+HSteamNetConnection SteamAPI_ISteamNetworkingSockets_ConnectP2P(ISteamNetworkingSockets *self, const void *identity_remote, int remote_virtual_port, int n_options, const void *options) { return 31; }
+int  SteamAPI_ISteamNetworkingSockets_AcceptConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn) { return 1; } /* k_EResultOK */
+bool SteamAPI_ISteamNetworkingSockets_CloseConnection(ISteamNetworkingSockets *self, HSteamNetConnection peer, int reason, const char *debug, bool enable_linger) { return true; }
+int  SteamAPI_ISteamNetworkingSockets_SendMessageToConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, const void *data, uint32 cb_data, int send_flags, int64_t *out_message_number) { if (out_message_number) { *out_message_number = 1; } return 1; }
+int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, void **out_messages, int max_messages) { return 0; }
+void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils *self) { }
+void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id) { }
+uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity) { return 0; }
+void SteamAPI_SteamNetworkingMessage_t_Release(void *message) { }

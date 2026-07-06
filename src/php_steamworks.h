@@ -43,6 +43,16 @@ void steamworks_callbacks_unregister(void);  /* unregister before steam_shutdown
 
 PHP_FUNCTION(steam_user_get_auth_ticket_for_web_api);
 PHP_FUNCTION(steam_user_get_web_api_ticket_result);
+PHP_FUNCTION(steam_net_get_connection_events); /* steam_callback.c */
+
+/* steam_net.c */
+PHP_FUNCTION(steam_net_init_relay_network_access);
+PHP_FUNCTION(steam_net_create_listen_socket_p2p);
+PHP_FUNCTION(steam_net_connect_p2p);
+PHP_FUNCTION(steam_net_accept_connection);
+PHP_FUNCTION(steam_net_close_connection);
+PHP_FUNCTION(steam_net_send_message);
+PHP_FUNCTION(steam_net_receive_messages);
 
 /* steam_init.c */
 PHP_FUNCTION(steam_init);

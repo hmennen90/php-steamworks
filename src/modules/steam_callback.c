@@ -39,7 +39,7 @@ struct steamworks_ccallback {
     int     size_bytes;
 };
 
-enum { CB_KIND_WEBAPI_TICKET = 1 };
+enum { CB_KIND_WEBAPI_TICKET = 1, CB_KIND_NET_CONNECTION_STATUS = 2 };
 
 /* Stored web-api ticket response, keyed by HAuthTicket handle. */
 struct webapi_ticket {
@@ -48,8 +48,20 @@ struct webapi_ticket {
     unsigned char *bytes;  /* pemalloc'd, len bytes (NULL if len == 0) */
 };
 
+/* Queued ISteamNetworkingSockets connection-status change. */
+struct net_event {
+    uint32_t       conn;
+    int            new_state;
+    int            old_state;
+    uint64_t       peer;   /* remote SteamID (0 if not a SteamID identity) */
+};
+
 static HashTable webapi_tickets;
+static HashTable net_events;      /* auto-indexed queue of struct net_event* */
 static bool      storage_initialized = false;
+
+/* Helper for reading fields out of the raw callback param by byte offset. */
+#define NET_READ(base, off, type) (*(type *)((const unsigned char *)(base) + (off)))
 
 static void webapi_ticket_free(struct webapi_ticket *t)
 {
@@ -83,6 +95,16 @@ static void cb_run(struct steamworks_ccallback *self, void *param)
         }
         zend_hash_index_update_ptr(&webapi_tickets, (zend_ulong)r->m_hAuthTicket, t);
     }
+    else if (self->kind == CB_KIND_NET_CONNECTION_STATUS && storage_initialized && param) {
+        struct net_event *e = pemalloc(sizeof(*e), 1);
+        e->conn      = NET_READ(param, STEAMWORKS_NETCB_CONN_OFF, uint32_t);
+        e->new_state = NET_READ(param, STEAMWORKS_NETCB_NEWSTATE_OFF, int32_t);
+        e->old_state = NET_READ(param, STEAMWORKS_NETCB_OLDSTATE_OFF, int32_t);
+        /* Peer identity lives inline at m_info.m_identityRemote. */
+        e->peer = SteamAPI_SteamNetworkingIdentity_GetSteamID64(
+            (void *)((const unsigned char *)param + STEAMWORKS_NETCB_IDENTITY_OFF));
+        zend_hash_next_index_insert_ptr(&net_events, e);
+    }
 }
 
 static void cb_run_io(struct steamworks_ccallback *self, void *param, bool io_failure, SteamAPICall_t call)
@@ -99,13 +121,20 @@ static int cb_size(struct steamworks_ccallback *self)
 static const struct steamworks_ccallback_vtbl CB_VTBL = { cb_run, cb_run_io, cb_size };
 
 static struct steamworks_ccallback cb_webapi_ticket;
+static struct steamworks_ccallback cb_net_status;
 static bool callbacks_registered = false;
+
+static void net_event_dtor(zval *zv)
+{
+    pefree(Z_PTR_P(zv), 1);
+}
 
 /* ── Lifecycle (called from MINIT/MSHUTDOWN and steam_init/steam_shutdown) ──── */
 
 void steamworks_callbacks_minit(void)
 {
     zend_hash_init(&webapi_tickets, 8, NULL, NULL, 1);
+    zend_hash_init(&net_events, 8, NULL, net_event_dtor, 1);
     storage_initialized = true;
 }
 
@@ -117,18 +146,29 @@ void steamworks_callbacks_mshutdown(void)
         webapi_ticket_free(t);
     } ZEND_HASH_FOREACH_END();
     zend_hash_destroy(&webapi_tickets);
+    zend_hash_destroy(&net_events); /* net_event_dtor frees each entry */
     storage_initialized = false;
+}
+
+static void cb_setup(struct steamworks_ccallback *cb, int icallback, int kind, int size_bytes)
+{
+    cb->vtbl             = &CB_VTBL;
+    cb->m_nCallbackFlags = 0;
+    cb->m_iCallback      = icallback;
+    cb->kind             = kind;
+    cb->size_bytes       = size_bytes;
+    SteamAPI_RegisterCallback(cb, icallback);
 }
 
 void steamworks_callbacks_register(void)
 {
     if (callbacks_registered) { return; }
-    cb_webapi_ticket.vtbl             = &CB_VTBL;
-    cb_webapi_ticket.m_nCallbackFlags = 0;
-    cb_webapi_ticket.m_iCallback      = k_iCallback_GetTicketForWebApiResponse;
-    cb_webapi_ticket.kind             = CB_KIND_WEBAPI_TICKET;
-    cb_webapi_ticket.size_bytes       = (int)sizeof(GetTicketForWebApiResponse_t);
-    SteamAPI_RegisterCallback(&cb_webapi_ticket, k_iCallback_GetTicketForWebApiResponse);
+    cb_setup(&cb_webapi_ticket, k_iCallback_GetTicketForWebApiResponse,
+             CB_KIND_WEBAPI_TICKET, (int)sizeof(GetTicketForWebApiResponse_t));
+    /* Connection-status param is SteamNetConnectionStatusChangedCallback_t
+       (712 bytes per SDK 1.64); we read fields by offset only. */
+    cb_setup(&cb_net_status, k_iCallback_SteamNetConnectionStatusChanged,
+             CB_KIND_NET_CONNECTION_STATUS, 712);
     callbacks_registered = true;
 }
 
@@ -136,7 +176,32 @@ void steamworks_callbacks_unregister(void)
 {
     if (!callbacks_registered) { return; }
     SteamAPI_UnregisterCallback(&cb_webapi_ticket);
+    SteamAPI_UnregisterCallback(&cb_net_status);
     callbacks_registered = false;
+}
+
+PHP_FUNCTION(steam_net_get_connection_events)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    array_init(return_value);
+    if (!storage_initialized) {
+        return;
+    }
+
+    struct net_event *e;
+    ZEND_HASH_FOREACH_PTR(&net_events, e) {
+        zval ev;
+        array_init(&ev);
+        add_assoc_long(&ev, "connection", (zend_long)e->conn);
+        add_assoc_long(&ev, "state",      (zend_long)e->new_state);
+        add_assoc_long(&ev, "old_state",  (zend_long)e->old_state);
+        add_assoc_long(&ev, "peer",       (zend_long)e->peer);
+        add_next_index_zval(return_value, &ev);
+    } ZEND_HASH_FOREACH_END();
+
+    /* Consume the queue. */
+    zend_hash_clean(&net_events);
 }
 
 /* ── PHP functions: web-api auth ticket (backend auth) ─────────────────────── */

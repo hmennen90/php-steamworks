@@ -100,6 +100,19 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_optional_string, 0, 0, 0)
     ZEND_ARG_TYPE_INFO(0, identity, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_net_close, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, connection, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, reason, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, debug, IS_STRING, 1)
+    ZEND_ARG_TYPE_INFO(0, linger, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_net_send, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, connection, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, reliable, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
 /* ── ISteamTimeline arginfo ── */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_set_tooltip, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
@@ -280,6 +293,16 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_ugc_get_item_download_info, arginfo_steam_one_long)
     PHP_FE(steam_ugc_download_item,         arginfo_steam_long_optional_bool)
 
+    /* steam_callback.c / steam_net.c */
+    PHP_FE(steam_net_get_connection_events, arginfo_steam_void)
+    PHP_FE(steam_net_init_relay_network_access, arginfo_steam_void)
+    PHP_FE(steam_net_create_listen_socket_p2p, arginfo_steam_optional_long)
+    PHP_FE(steam_net_connect_p2p,           arginfo_steam_long_optional_long)
+    PHP_FE(steam_net_accept_connection,     arginfo_steam_one_long)
+    PHP_FE(steam_net_close_connection,      arginfo_steam_net_close)
+    PHP_FE(steam_net_send_message,          arginfo_steam_net_send)
+    PHP_FE(steam_net_receive_messages,      arginfo_steam_long_optional_long)
+
     PHP_FE_END
 };
 
@@ -375,6 +398,18 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOADING",      16, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOAD_PENDING", 32, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DISABLED_LOCALLY", 64, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamNetworkingSockets: connection state (ESteamNetworkingConnectionState). */
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_NONE",                     0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_CONNECTING",               1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_FINDING_ROUTE",            2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_CONNECTED",                3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_CLOSED_BY_PEER",           4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_PROBLEM_DETECTED_LOCALLY", 5, CONST_CS | CONST_PERSISTENT);
+
+    /* Send flags for steam_net_send_message(). */
+    REGISTER_LONG_CONSTANT("STEAM_NET_SEND_UNRELIABLE", 0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_NET_SEND_RELIABLE",   8, CONST_CS | CONST_PERSISTENT);
 
     return SUCCESS;
 }

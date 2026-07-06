@@ -158,6 +158,8 @@ ISteamApps*          SteamAPI_SteamApps_v009(void);
 ISteamUtils*         SteamAPI_SteamUtils_v010(void);
 ISteamTimeline*      SteamAPI_SteamTimeline_v004(void);
 ISteamUGC*           SteamAPI_SteamUGC_v021(void);
+ISteamNetworkingSockets* SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void);
+ISteamNetworkingUtils*   SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void);
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
@@ -170,6 +172,18 @@ void           SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steam
 void           SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle);
 void           SteamAPI_RegisterCallback(void *callback, int iCallback);
 void           SteamAPI_UnregisterCallback(void *callback);
+
+/* ISteamNetworkingSockets / Utils */
+HSteamListenSocket  SteamAPI_ISteamNetworkingSockets_CreateListenSocketP2P(ISteamNetworkingSockets *self, int local_virtual_port, int n_options, const void *options);
+HSteamNetConnection SteamAPI_ISteamNetworkingSockets_ConnectP2P(ISteamNetworkingSockets *self, const void *identity_remote, int remote_virtual_port, int n_options, const void *options);
+int  SteamAPI_ISteamNetworkingSockets_AcceptConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn);
+bool SteamAPI_ISteamNetworkingSockets_CloseConnection(ISteamNetworkingSockets *self, HSteamNetConnection peer, int reason, const char *debug, bool enable_linger);
+int  SteamAPI_ISteamNetworkingSockets_SendMessageToConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, const void *data, uint32 cb_data, int send_flags, int64_t *out_message_number);
+int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, void **out_messages, int max_messages);
+void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils *self);
+void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id);
+uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity);
+void SteamAPI_SteamNetworkingMessage_t_Release(void *message);
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);

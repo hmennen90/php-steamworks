@@ -875,3 +875,82 @@ function steam_ugc_get_item_download_info(int $file_id): array|false {}
  * @return bool true wenn der Download gestartet wurde
  */
 function steam_ugc_download_item(int $file_id, bool $high_priority = false): bool {}
+
+/* ── steam_net.c (ISteamNetworkingSockets / P2P) + steam_callback.c ──
+ *
+ * P2P-Verbindungen über Steams Relay-Netzwerk. Verbindungsstatus-Änderungen
+ * kommen per Callback — nach steam_run_callbacks() mit
+ * steam_net_get_connection_events() abholen. Empfangene Nachrichten synchron
+ * über steam_net_receive_messages() pollen.
+ */
+
+/**
+ * Startet den Zugang zum Steam-Relay-Netzwerk vorab (schnellere erste P2P-Verbindung).
+ *
+ * @return bool true bei Erfolg
+ */
+function steam_net_init_relay_network_access(): bool {}
+
+/**
+ * Erstellt einen P2P-Listen-Socket (nimmt eingehende Verbindungen an).
+ *
+ * @param int $virtual_port Virtueller Port (0 = Standard)
+ * @return int|false Listen-Socket-Handle, false bei Fehler
+ */
+function steam_net_create_listen_socket_p2p(int $virtual_port = 0): int|false {}
+
+/**
+ * Baut eine P2P-Verbindung zu einem anderen Steam-Nutzer auf.
+ *
+ * @param int $steam_id SteamID des Ziels
+ * @param int $virtual_port Virtueller Port (muss zum Listen-Socket der Gegenseite passen)
+ * @return int|false Verbindungs-Handle, false bei Fehler
+ */
+function steam_net_connect_p2p(int $steam_id, int $virtual_port = 0): int|false {}
+
+/**
+ * Akzeptiert eine eingehende Verbindung (nach einem Connecting-Status-Event).
+ *
+ * @param int $connection Verbindungs-Handle
+ * @return int|false EResult (1 = OK), false wenn Steam nicht initialisiert
+ */
+function steam_net_accept_connection(int $connection): int|false {}
+
+/**
+ * Schließt eine Verbindung.
+ *
+ * @param int $connection Verbindungs-Handle
+ * @param int $reason App-definierter Grund-Code (0 = Standard)
+ * @param string|null $debug Optionaler Debug-String für die Gegenseite
+ * @param bool $linger true = ausstehende zuverlässige Nachrichten noch senden
+ * @return bool true bei Erfolg
+ */
+function steam_net_close_connection(int $connection, int $reason = 0, ?string $debug = null, bool $linger = false): bool {}
+
+/**
+ * Sendet eine Nachricht über eine Verbindung.
+ *
+ * @param int $connection Verbindungs-Handle
+ * @param string $data Rohdaten
+ * @param bool $reliable true = zuverlässig (STEAM_NET_SEND_RELIABLE), false = unzuverlässig
+ * @return int|false EResult (1 = OK / eingereiht), false wenn Steam nicht initialisiert
+ */
+function steam_net_send_message(int $connection, string $data, bool $reliable = true): int|false {}
+
+/**
+ * Holt empfangene Nachrichten einer Verbindung ab (synchron).
+ *
+ * @param int $connection Verbindungs-Handle
+ * @param int $max Maximale Anzahl pro Aufruf (1..256)
+ * @return array<array{data:string, size:int, connection:int, peer:int, message_number:int, reliable:bool}>|false
+ */
+function steam_net_receive_messages(int $connection, int $max = 32): array|false {}
+
+/**
+ * Holt aufgelaufene Verbindungsstatus-Änderungen ab und leert die Queue.
+ * Nach jedem steam_run_callbacks() aufrufen.
+ *
+ * @return array<array{connection:int, state:int, old_state:int, peer:int}>
+ *         state/old_state = STEAM_NET_CONNECTION_STATE_* (peer = SteamID, 0 wenn keine)
+ */
+function steam_net_get_connection_events(): array {}
