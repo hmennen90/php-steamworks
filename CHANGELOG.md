@@ -2,10 +2,25 @@
 
 ## [0.11.0] - 2026-07-06 (unreleased)
 
-Phase 3 — social, identity & Workshop. All flat signatures, struct layouts and
-callback IDs verified against the real Steamworks SDK 1.64.
+Phase 3 — social, identity, Workshop & networking. All flat signatures, struct
+layouts and callback IDs verified against the real Steamworks SDK 1.64, and the
+whole surface runtime-verified against a live Steam client (App 480).
 
 ### Added
+- **General callback subsystem** (`steam_callback.c`) — receives callbacks that
+  arrive via RunCallbacks (not SteamAPICall_t results) by fabricating objects
+  binary-compatible with the SDK's CCallbackBase and registering them with
+  SteamAPI_RegisterCallback. Coexists with RunCallbacks, so the verified
+  SteamAPICall_t path is untouched. Live-verified: the fabricated vtable dispatches.
+- **ISteamUser — web-api auth ticket** (backend auth):
+  `get_auth_ticket_for_web_api` + `get_web_api_ticket_result` (handle + poll;
+  ticket delivered via GetTicketForWebApiResponse_t, callback id 168).
+- **ISteamNetworkingSockets — P2P messaging core** (`steam_net.c`, v012):
+  `init_relay_network_access`, `create_listen_socket_p2p`, `connect_p2p`,
+  `accept_connection`, `close_connection`, `send_message`, `receive_messages`,
+  and `get_connection_events` (drains SteamNetConnectionStatusChangedCallback_t,
+  id 1221). New STEAM_NET_CONNECTION_STATE_* and STEAM_NET_SEND_* constants.
+  Message/callback structs read via SDK-1.64-verified byte offsets.
 - **ISteamFriends — friends list, persona state & avatars** (`steam_friends.c`):
   `get_persona_state`, `get_friend_count`/`get_friend_by_index` (EFriendFlags),
   `get_friend_relationship`, `get_friend_persona_state`/`get_friend_persona_name`,
@@ -22,12 +37,12 @@ callback IDs verified against the real Steamworks SDK 1.64.
   (STEAM_UGC_ITEM_STATE_* bitflags), `get_item_install_info`,
   `get_item_download_info`, `download_item`.
 
-### Deferred (needs a callback-dispatch subsystem)
-- `steam_user_get_auth_ticket_for_web_api()` — its ticket arrives via the
-  GetTicketForWebApiResponse_t *callback*, not a CallResult.
-- **ISteamNetworkingSockets** — connection status is delivered via callback and
-  received messages are reference-counted structs; both require the callback pump.
-- ISteamUGC querying/browsing (CreateQuery* + GetQueryUGCResult / SteamUGCDetails_t).
+### Deferred (documented follow-ups)
+- ISteamUGC querying/browsing (CreateQuery* + GetQueryUGCResult / SteamUGCDetails_t) —
+  the large SteamUGCDetails_t result struct; the consume path above covers subscribe/
+  download/state.
+- ISteamNetworkingSockets: listen-side accept flow beyond the basics, lanes, and
+  connection real-time status/statistics.
 
 ## [0.10.0] - 2026-07-06
 
