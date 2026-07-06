@@ -13,7 +13,8 @@ if (PHP_STEAMWORKS != "no") {
         "src\\modules\\steam_apps.c " +
         "src\\modules\\steam_utils.c " +
         "src\\modules\\steam_timeline.c " +
-        "src\\modules\\steam_ugc.c";
+        "src\\modules\\steam_ugc.c " +
+        "src\\modules\\steam_callback.c";
 
     if (PHP_STEAMWORKS_MOCK == "yes") {
         var mock_dir = configure_module_dirname + "\\ci\\mock_sdk";

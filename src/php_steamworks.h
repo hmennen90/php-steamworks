@@ -35,6 +35,15 @@ void steamworks_register_call(uint64_t handle, enum steamworks_call_kind kind);
 
 PHP_FUNCTION(steam_get_call_result);
 
+/* ── General callback subsystem (steam_callback.c) ─────────────────────────── */
+void steamworks_callbacks_minit(void);       /* init storage (MINIT) */
+void steamworks_callbacks_mshutdown(void);   /* free storage (MSHUTDOWN) */
+void steamworks_callbacks_register(void);    /* register CCallbacks after steam_init */
+void steamworks_callbacks_unregister(void);  /* unregister before steam_shutdown */
+
+PHP_FUNCTION(steam_user_get_auth_ticket_for_web_api);
+PHP_FUNCTION(steam_user_get_web_api_ticket_result);
+
 /* steam_init.c */
 PHP_FUNCTION(steam_init);
 PHP_FUNCTION(steam_shutdown);

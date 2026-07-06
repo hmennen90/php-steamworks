@@ -118,6 +118,12 @@ enum {
     k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15, /* 1315 */
 };
 
+/* General callback IDs (delivered via RunCallbacks, not CallResults).
+   k_iSteamUserCallbacks base = 100 (verified vs SDK 1.64). */
+enum {
+    k_iCallback_GetTicketForWebApiResponse = 100 + 68, /* 168 */
+};
+
 /* CallResult structs — layout must match the SDK's callback packing exactly.
  * The SDK (steamclientpublic.h) uses pack(4) on Linux/macOS/FreeBSD and pack(8)
  * on Windows (VALVE_CALLBACK_PACK_SMALL vs _LARGE). Getting this wrong makes
@@ -182,6 +188,14 @@ typedef struct {
     int32              m_eResult;
     PublishedFileId_t  m_nPublishedFileId;
 } RemoteStorageUnsubscribePublishedFileResult_t;
+
+/* ISteamUser web-api ticket response callback (verified vs SDK 1.64, id 168). */
+typedef struct {
+    HAuthTicket m_hAuthTicket;
+    int32       m_eResult;      /* EResult */
+    int32       m_cubTicket;
+    uint8_t     m_rgubTicket[2560];
+} GetTicketForWebApiResponse_t;
 #pragma pack(pop)
 
 /* Steam error message buffer (1024 bytes as per SDK) */
@@ -215,9 +229,15 @@ int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self);
 /* Auth tickets. identity is a const SteamNetworkingIdentity* (opaque here — pass NULL).
    BeginAuthSession returns EBeginAuthSessionResult (int-sized enum). */
 HAuthTicket SteamAPI_ISteamUser_GetAuthSessionTicket(ISteamUser *self, void *ticket, int max_ticket, uint32 *ticket_size, const void *identity);
+HAuthTicket SteamAPI_ISteamUser_GetAuthTicketForWebApi(ISteamUser *self, const char *identity);
 int         SteamAPI_ISteamUser_BeginAuthSession(ISteamUser *self, const void *auth_ticket, int ticket_size, uint64_steamid steam_id);
 void        SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steamid steam_id);
 void        SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle);
+
+/* ── Callback registration (steam_callback.c fabricates CCallbackBase objects) ──
+   pCallback is a CCallbackBase* (opaque here). */
+void SteamAPI_RegisterCallback(void *callback, int iCallback);
+void SteamAPI_UnregisterCallback(void *callback);
 
 /* ── ISteamFriends ─────────────────────────────────────────────────── */
 const char *SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);

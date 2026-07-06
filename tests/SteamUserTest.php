@@ -89,4 +89,25 @@ class SteamUserTest extends TestCase
         $this->assertIsBool(@steam_user_end_auth_session(76561197960265728));
         $this->assertIsBool(@steam_user_cancel_auth_ticket(1));
     }
+
+    /* ── Web-API ticket (callback-based) ── */
+
+    public function testWebApiTicketFunctionsExist(): void
+    {
+        $this->assertTrue(function_exists('steam_user_get_auth_ticket_for_web_api'));
+        $this->assertTrue(function_exists('steam_user_get_web_api_ticket_result'));
+    }
+
+    public function testGetAuthTicketForWebApiReturnsHandleOrFalse(): void
+    {
+        $result = @steam_user_get_auth_ticket_for_web_api('unittest');
+        $this->assertTrue(is_int($result) || $result === false);
+    }
+
+    public function testGetWebApiTicketResultReturnsArrayOrNull(): void
+    {
+        // Without a delivered callback (mock/no Steam) it stays null; never fatals.
+        $result = @steam_user_get_web_api_ticket_result(1);
+        $this->assertTrue($result === null || is_array($result));
+    }
 }

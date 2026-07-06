@@ -96,6 +96,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_string_long, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, steam_id, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_optional_string, 0, 0, 0)
+    ZEND_ARG_TYPE_INFO(0, identity, IS_STRING, 1)
+ZEND_END_ARG_INFO()
+
 /* ── ISteamTimeline arginfo ── */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_set_tooltip, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
@@ -175,6 +179,8 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_user_begin_auth_session,   arginfo_steam_string_long)
     PHP_FE(steam_user_end_auth_session,     arginfo_steam_one_long)
     PHP_FE(steam_user_cancel_auth_ticket,   arginfo_steam_one_long)
+    PHP_FE(steam_user_get_auth_ticket_for_web_api, arginfo_steam_optional_string)
+    PHP_FE(steam_user_get_web_api_ticket_result, arginfo_steam_one_long)
 
     /* steam_friends.c */
     PHP_FE(steam_friends_get_name,          arginfo_steam_void)
@@ -288,6 +294,7 @@ PHP_MINFO_FUNCTION(steamworks)
 PHP_MINIT_FUNCTION(steamworks)
 {
     steamworks_async_minit();
+    steamworks_callbacks_minit();
 
     /* Leaderboard enum constants (mirror ELeaderboard* in the SDK). */
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_SORT_ASCENDING",  1, CONST_CS | CONST_PERSISTENT);
@@ -375,6 +382,7 @@ PHP_MINIT_FUNCTION(steamworks)
 PHP_MSHUTDOWN_FUNCTION(steamworks)
 {
     steamworks_async_mshutdown();
+    steamworks_callbacks_mshutdown();
     return SUCCESS;
 }
 

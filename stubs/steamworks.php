@@ -103,6 +103,27 @@ function steam_user_end_auth_session(int $steam_id): bool {}
  */
 function steam_user_cancel_auth_ticket(int $handle): bool {}
 
+/**
+ * Fordert ein Auth-Ticket für die Steamworks Web-API an (Backend-Auth, asynchron).
+ * Gibt sofort ein Handle zurück; das Ticket kommt per Callback und wird über
+ * steam_user_get_web_api_ticket_result() abgeholt (steam_run_callbacks() pollen).
+ *
+ * @param string|null $identity Identität des Dienstes, für den das Ticket gilt
+ *                              (z.B. Domain deines Backends), oder null
+ * @return int|false Ticket-Handle, false bei Fehler
+ */
+function steam_user_get_auth_ticket_for_web_api(?string $identity = null): int|false {}
+
+/**
+ * Holt das Ergebnis von steam_user_get_auth_ticket_for_web_api() ab (Poll).
+ * Jeden Frame nach steam_run_callbacks() aufrufen, bis nicht mehr null zurückkommt.
+ *
+ * @param int $handle Ticket-Handle
+ * @return array{success:bool, result:int, ticket:string}|null
+ *         null = noch nicht geliefert; ticket = rohe Bytes (hex an die Web-API senden)
+ */
+function steam_user_get_web_api_ticket_result(int $handle): ?array {}
+
 /* ── steam_friends.c ── */
 
 /**

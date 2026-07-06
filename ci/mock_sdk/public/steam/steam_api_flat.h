@@ -67,6 +67,7 @@ enum {
     k_iCallback_SteamTimelineEventRecordingExists      = 6000 + 2,
     k_iCallback_RemoteStorageSubscribePublishedFileResult   = 1300 + 13,
     k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15,
+    k_iCallback_GetTicketForWebApiResponse                  = 100 + 68,
 };
 
 /* CallResult structs — layout must match src/steam_api_c.h and the real SDK.
@@ -127,6 +128,13 @@ typedef struct {
     int32             m_eResult;
     PublishedFileId_t m_nPublishedFileId;
 } RemoteStorageUnsubscribePublishedFileResult_t;
+
+typedef struct {
+    HAuthTicket m_hAuthTicket;
+    int32       m_eResult;
+    int32       m_cubTicket;
+    uint8_t     m_rgubTicket[2560];
+} GetTicketForWebApiResponse_t;
 #pragma pack(pop)
 
 typedef enum {
@@ -156,9 +164,12 @@ uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
 bool           SteamAPI_ISteamUser_BLoggedOn(ISteamUser *self);
 int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self);
 HAuthTicket    SteamAPI_ISteamUser_GetAuthSessionTicket(ISteamUser *self, void *ticket, int max_ticket, uint32 *ticket_size, const void *identity);
+HAuthTicket    SteamAPI_ISteamUser_GetAuthTicketForWebApi(ISteamUser *self, const char *identity);
 int            SteamAPI_ISteamUser_BeginAuthSession(ISteamUser *self, const void *auth_ticket, int ticket_size, uint64_steamid steam_id);
 void           SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steamid steam_id);
 void           SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle);
+void           SteamAPI_RegisterCallback(void *callback, int iCallback);
+void           SteamAPI_UnregisterCallback(void *callback);
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);

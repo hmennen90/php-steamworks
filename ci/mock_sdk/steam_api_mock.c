@@ -14,6 +14,8 @@ ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg) {
 }
 void SteamAPI_Shutdown(void) { }
 void SteamAPI_RunCallbacks(void) { }
+void SteamAPI_RegisterCallback(void *callback, int iCallback) { }
+void SteamAPI_UnregisterCallback(void *callback) { }
 
 /* Accessors — return a non-NULL pointer so functions can proceed */
 ISteamUser*          SteamAPI_SteamUser_v023(void)          { return (ISteamUser*)&mock_instance; }
@@ -35,6 +37,7 @@ HAuthTicket    SteamAPI_ISteamUser_GetAuthSessionTicket(ISteamUser *self, void *
     if (ticket_size) { *ticket_size = (uint32)n; }
     return 1; /* fake HAuthTicket */
 }
+HAuthTicket    SteamAPI_ISteamUser_GetAuthTicketForWebApi(ISteamUser *self, const char *identity) { return 2; } /* fake handle; response callback never fires in mock */
 int            SteamAPI_ISteamUser_BeginAuthSession(ISteamUser *self, const void *auth_ticket, int ticket_size, uint64_steamid steam_id) { return 0; } /* k_EBeginAuthSessionResultOK */
 void           SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steamid steam_id) { }
 void           SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle) { }
