@@ -121,9 +121,9 @@ steam_shutdown();
 ### Leaderboards (async — see below)
 - `steam_stats_find_leaderboard(string $name): int|false`
 - `steam_stats_find_or_create_leaderboard(string $name, int $sort, int $display): int|false`
-- `steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST): int|false`
+- `steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, ?array $details = null): int|false` — `$details` = optional `int[]` game-specific values stored with the score (max `STEAM_LEADERBOARD_DETAILS_MAX` = 64)
 - `steam_stats_download_leaderboard_entries(int $leaderboard, int $request, int $start, int $end): int|false`
-- `steam_stats_get_downloaded_entry(int $entries, int $index): ?array`
+- `steam_stats_get_downloaded_entry(int $entries, int $index): ?array` — returns `['steam_id' => int, 'global_rank' => int, 'score' => int, 'details' => int[]]`
 - `steam_stats_get_leaderboard_entry_count(int $leaderboard): int`
 
 ### Async CallResults
@@ -157,6 +157,27 @@ steam_shutdown();
 - `steam_utils_get_server_real_time(): int|false`
 - `steam_utils_get_current_battery_power(): int|false` — 0–100 %, 255 = on AC power
 - `steam_utils_get_seconds_since_app_active(): int|false`
+
+### Timeline (Game Recording)
+
+Annotate the Steam Game Recording timeline. Most calls are fire-and-forget (`bool`);
+the two `does_*_recording_exist` calls are async (return a handle — poll `steam_get_call_result`).
+Verified against Steamworks SDK 1.64 (`STEAMTIMELINE_INTERFACE_V004`).
+
+- `steam_timeline_set_game_mode(int $mode): bool` — `STEAM_TIMELINE_GAME_MODE_*`
+- `steam_timeline_set_tooltip(string $description, float $time_delta = 0.0): bool`
+- `steam_timeline_clear_tooltip(float $time_delta = 0.0): bool`
+- `steam_timeline_add_instantaneous_event(string $title, string $description, string $icon, int $icon_priority = 0, float $start_offset_seconds = 0.0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): int`
+- `steam_timeline_add_range_event(string $title, string $description, string $icon, int $icon_priority = 0, float $start_offset_seconds = 0.0, float $duration_seconds = 0.0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): int`
+- `steam_timeline_start_range_event(...): int` / `steam_timeline_update_range_event(int $event, ...): bool` / `steam_timeline_end_range_event(int $event, float $end_offset_seconds = 0.0): bool`
+- `steam_timeline_remove_event(int $event): bool`
+- `steam_timeline_does_event_recording_exist(int $event): int|false` — async (`type` = `timeline_event_recording_exists`)
+- `steam_timeline_start_game_phase(): bool` / `steam_timeline_end_game_phase(): bool`
+- `steam_timeline_set_game_phase_id(string $phase_id): bool`
+- `steam_timeline_does_game_phase_recording_exist(string $phase_id): int|false` — async (`type` = `timeline_game_phase_recording_exists`)
+- `steam_timeline_add_game_phase_tag(string $tag_name, string $tag_icon, string $tag_group, int $priority = 0): bool`
+- `steam_timeline_set_game_phase_attribute(string $attribute_group, string $attribute_value, int $priority = 0): bool`
+- `steam_timeline_open_overlay_to_game_phase(string $phase_id): bool` / `steam_timeline_open_overlay_to_event(int $event): bool`
 
 ## Leaderboards & async calls
 

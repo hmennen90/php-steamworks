@@ -34,7 +34,8 @@ php-steamworks/
 │   │   ├── steam_remote.c      ← ISteamRemoteStorage: Cloud Saves
 │   │   ├── steam_apps.c        ← ISteamApps: DLC, Beta, Language, AppID
 │   │   ├── steam_utils.c       ← ISteamUtils: Overlay, AppID, Country, Language
-│   │   └── steam_async.c       ← Async CallResults (Handle+Poll): steam_get_call_result
+│   │   ├── steam_async.c       ← Async CallResults (Handle+Poll): steam_get_call_result
+│   │   └── steam_timeline.c    ← ISteamTimeline: Game Recording, Events, Game Phases
 │   │   (steam_ugc.c            ← ISteamUGC: Workshop — Phase 3, noch nicht angelegt)
 ├── stubs/
 │   └── steamworks.php          ← PHP-Stubs für IDE-Autocompletion (kein Runtime-Code)
@@ -227,9 +228,12 @@ steam_utils_get_country_code()
 
 ## Implementierungsreihenfolge (Priorität)
 
-**Stand v0.8.0: Phase 1 und Phase 2 vollständig implementiert (55 Funktionen).**
+**Stand v0.10.0: Phase 1 und Phase 2 vollständig, Phase 3 begonnen (72 Funktionen).**
 Zusätzlich umgesetzt: asynchrone CallResult-Infrastruktur (`steam_get_call_result()`,
-`src/modules/steam_async.c`), Achievement-Lesepfad, sowie erweiterte Apps/Utils/User-Getter.
+`src/modules/steam_async.c`), Achievement-Lesepfad, erweiterte Apps/Utils/User-Getter,
+Leaderboard-Score-Details (`int32[]`) sowie das komplette ISteamTimeline-Modul
+(Game Recording / Events / Game Phases, `src/modules/steam_timeline.c`) — Letzteres gegen
+die echte Steamworks SDK 1.64 (V004) verifiziert (Signaturen, Struct-Layouts, Callback-IDs).
 
 ### Phase 1 — Launch-kritisch ✅ erledigt
 Diese Funktionen werden für jeden Steam-Release benötigt:
@@ -250,15 +254,22 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
 12. `steam_friends_activate_overlay_to_web_page()` — URL im Steam Overlay öffnen
 13. `steam_apps_is_dlc_installed()` — DLC-Prüfung
 
-### Phase 3 — Offen
+### Phase 3 — In Arbeit
+- **ISteamTimeline** (Game Recording) ✅ implementiert (`steam_timeline.c`, 18 Funktionen),
+  gegen echte SDK 1.64 (V004) verifiziert — Signaturen, Struct-Layouts und Callback-IDs
+  (6000-Basis) per C++-Probe gegen die realen Header bestätigt
 - **Auth-Tickets** (`steam_user_get_auth_session_ticket` / `get_auth_ticket_for_web_api`) — Server-/Backend-Auth für Online-Games; async, nutzt die vorhandene Handle+Poll-Infrastruktur
 - **ISteamFriends erweitern** — Freundesliste, Persona-State, Avatare
 - **ISteamUGC** (Workshop) — nur wenn Mod-Support über Steam Workshop
 - **ISteamNetworkingSockets/Messages** — nur für Multiplayer-Transport
 
 ### Zurückgestellt (dokumentiert)
-- Score-`details`-Arrays (`int32[]`) bei Leaderboard-Upload/Download
-- Real-SDK-Verifikation: Callback-IDs (1104–1106) + Struct-Packing der CallResults beim ersten Build gegen die echte SDK gegenprüfen (Mock kann ABI-Abweichungen nicht fangen)
+- Score-`details`-Arrays (`int32[]`) bei Leaderboard-Upload/Download ✅ erledigt in v0.10.0
+- Real-SDK-Verifikation: Leaderboard-Callback-IDs (1104–1106) ✅ gegen SDK 1.64 (v0.9.0);
+  ISteamTimeline ✅ gegen SDK 1.64 (v0.10.0) — Accessor `SteamTimeline_v004`, alle Flat-Signaturen,
+  Struct-Layouts und Callback-IDs (6000-Basis → 6001/6002) bestätigt. Die echte SDK liegt lokal
+  unter `~/Downloads/steamworks_sdk_164/sdk`; ABI-Abweichungen (die der Mock nicht fängt) lassen
+  sich per C++-Probe gegen die realen Header verifizieren.
 
 ---
 
@@ -301,7 +312,8 @@ if test "$PHP_STEAMWORKS" != "no"; then
     src/modules/steam_async.c \
     src/modules/steam_remote.c \
     src/modules/steam_apps.c \
-    src/modules/steam_utils.c,
+    src/modules/steam_utils.c \
+    src/modules/steam_timeline.c,
     $ext_shared)
 fi
 ```

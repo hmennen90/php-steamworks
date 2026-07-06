@@ -107,6 +107,18 @@ class SteamLeaderboardTest extends TestCase
 
         $entry = @steam_stats_get_downloaded_entry($result['entries'], 0);
         $this->assertTrue(is_array($entry) || $entry === null);
+        if (is_array($entry)) {
+            // details is always an array now (int[] of the values, empty if none).
+            $this->assertArrayHasKey('details', $entry);
+            $this->assertIsArray($entry['details']);
+        }
+    }
+
+    public function testUploadScoreWithDetailsReturnsHandle(): void
+    {
+        // The optional int[] details argument must be accepted without a TypeError.
+        $handle = @steam_stats_upload_score(42, 1500, STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, [10, 20, 30]);
+        $this->assertTrue(is_int($handle) || $handle === false);
     }
 
     public function testPollingConsumesHandle(): void

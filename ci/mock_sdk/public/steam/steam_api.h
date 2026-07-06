@@ -23,6 +23,7 @@ typedef uint64_t SteamLeaderboard_t;
 typedef uint64_t SteamLeaderboardEntries_t;
 typedef uint64_t CSteamID_t;
 typedef uint64_t UGCHandle_t;
+typedef uint64_t TimelineEventHandle_t;
 
 typedef void ISteamUser;
 typedef void ISteamFriends;
@@ -31,5 +32,6 @@ typedef void ISteamRemoteStorage;
 typedef void ISteamApps;
 typedef void ISteamUtils;
 typedef void ISteamUGC;
+typedef void ISteamTimeline;
 
 #endif /* STEAM_API_H */

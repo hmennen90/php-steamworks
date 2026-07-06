@@ -39,11 +39,32 @@ typedef enum {
     k_ELeaderboardDataRequestUsers            = 3,
 } ELeaderboardDataRequest;
 
+/* ISteamTimeline enums (must match src/steam_api_c.h) */
+typedef enum {
+    k_ETimelineGameMode_Invalid       = 0,
+    k_ETimelineGameMode_Playing       = 1,
+    k_ETimelineGameMode_Staging       = 2,
+    k_ETimelineGameMode_Menus         = 3,
+    k_ETimelineGameMode_LoadingScreen = 4,
+    k_ETimelineGameMode_Max           = 5,
+} ETimelineGameMode;
+
+typedef enum {
+    k_ETimelineEventClipPriority_Invalid  = 0,
+    k_ETimelineEventClipPriority_None     = 1,
+    k_ETimelineEventClipPriority_Standard = 2,
+    k_ETimelineEventClipPriority_Featured = 3,
+} ETimelineEventClipPriority;
+
+#define k_cGamePhaseIDStrMaxLen 64
+
 /* Callback IDs (must match src/steam_api_c.h and the real SDK) */
 enum {
     k_iCallback_LeaderboardFindResult       = 1100 + 4,
     k_iCallback_LeaderboardScoresDownloaded = 1100 + 5,
     k_iCallback_LeaderboardScoreUploaded    = 1100 + 6,
+    k_iCallback_SteamTimelineGamePhaseRecordingExists = 6000 + 1,
+    k_iCallback_SteamTimelineEventRecordingExists      = 6000 + 2,
 };
 
 /* CallResult structs — layout must match src/steam_api_c.h and the real SDK.
@@ -80,6 +101,20 @@ typedef struct {
     int32       m_cDetails;
     UGCHandle_t m_hUGC;
 } LeaderboardEntry_t;
+
+/* ISteamTimeline CallResult structs (must match src/steam_api_c.h) */
+typedef struct {
+    char     m_rgchPhaseID[k_cGamePhaseIDStrMaxLen];
+    uint64_t m_ulRecordingMS;
+    uint64_t m_ulLongestClipMS;
+    uint32   m_unClipCount;
+    uint32   m_unScreenshotCount;
+} SteamTimelineGamePhaseRecordingExists_t;
+
+typedef struct {
+    TimelineEventHandle_t m_ulEventID;
+    uint8_t               m_bRecordingExists;
+} SteamTimelineEventRecordingExists_t;
 #pragma pack(pop)
 
 typedef enum {
@@ -101,6 +136,7 @@ ISteamUserStats*     SteamAPI_SteamUserStats_v013(void);
 ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void);
 ISteamApps*          SteamAPI_SteamApps_v009(void);
 ISteamUtils*         SteamAPI_SteamUtils_v010(void);
+ISteamTimeline*      SteamAPI_SteamTimeline_v004(void);
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
@@ -167,5 +203,25 @@ uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);
 uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsAPICallCompleted(ISteamUtils *self, SteamAPICall_t call, bool *failed);
 bool        SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t call, void *callback, int callback_size, int callback_expected, bool *failed);
+
+/* ISteamTimeline */
+void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode);
+void SteamAPI_ISteamTimeline_SetTimelineTooltip(ISteamTimeline *self, const char *description, float time_delta);
+void SteamAPI_ISteamTimeline_ClearTimelineTooltip(ISteamTimeline *self, float time_delta);
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddInstantaneousTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip);
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, float duration, ETimelineEventClipPriority possible_clip);
+TimelineEventHandle_t SteamAPI_ISteamTimeline_StartRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip);
+void SteamAPI_ISteamTimeline_UpdateRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, const char *title, const char *description, const char *icon, uint32 icon_priority, ETimelineEventClipPriority possible_clip);
+void SteamAPI_ISteamTimeline_EndRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, float end_offset_seconds);
+void SteamAPI_ISteamTimeline_RemoveTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesEventRecordingExist(ISteamTimeline *self, TimelineEventHandle_t event);
+void SteamAPI_ISteamTimeline_StartGamePhase(ISteamTimeline *self);
+void SteamAPI_ISteamTimeline_EndGamePhase(ISteamTimeline *self);
+void SteamAPI_ISteamTimeline_SetGamePhaseID(ISteamTimeline *self, const char *phase_id);
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesGamePhaseRecordingExist(ISteamTimeline *self, const char *phase_id);
+void SteamAPI_ISteamTimeline_AddGamePhaseTag(ISteamTimeline *self, const char *tag_name, const char *tag_icon, const char *tag_group, uint32 priority);
+void SteamAPI_ISteamTimeline_SetGamePhaseAttribute(ISteamTimeline *self, const char *attribute_group, const char *attribute_value, uint32 priority);
+void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const char *phase_id);
+void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
 
 #endif /* STEAM_API_FLAT_H */

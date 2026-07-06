@@ -61,12 +61,20 @@ SteamAPICall_t SteamAPI_ISteamUserStats_FindOrCreateLeaderboard(ISteamUserStats 
 SteamAPICall_t SteamAPI_ISteamUserStats_UploadLeaderboardScore(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardUploadScoreMethod method, int32 score, const int32 *details, int details_count) { return 2; }
 SteamAPICall_t SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardDataRequest request, int range_start, int range_end) { return 3; }
 bool SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *self, SteamLeaderboardEntries_t entries, int index, LeaderboardEntry_t *entry, int32 *details, int details_max) {
+    /* Emit two fake detail values so the details read path is exercised. */
+    int32 want = 2;
+    int32 n = (details_max < want) ? details_max : want;
     if (entry) {
         entry->m_steamIDUser = 76561197960265728ULL;
         entry->m_nGlobalRank = index + 1;
         entry->m_nScore      = 1000 - index;
-        entry->m_cDetails    = 0;
+        entry->m_cDetails    = n;
         entry->m_hUGC        = 0;
+    }
+    if (details) {
+        for (int32 i = 0; i < n; i++) {
+            details[i] = (index + 1) * 100 + i;
+        }
     }
     return true;
 }
@@ -145,5 +153,48 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
         r->m_cEntryCount              = 5;
         return true;
     }
+    if (callback_expected == k_iCallback_SteamTimelineEventRecordingExists
+        && callback_size >= (int)sizeof(SteamTimelineEventRecordingExists_t)) {
+        SteamTimelineEventRecordingExists_t *r = (SteamTimelineEventRecordingExists_t *)callback;
+        r->m_ulEventID        = 7;
+        r->m_bRecordingExists = 1;
+        return true;
+    }
+    if (callback_expected == k_iCallback_SteamTimelineGamePhaseRecordingExists
+        && callback_size >= (int)sizeof(SteamTimelineGamePhaseRecordingExists_t)) {
+        SteamTimelineGamePhaseRecordingExists_t *r = (SteamTimelineGamePhaseRecordingExists_t *)callback;
+        const char *id = "phase-1";
+        int i = 0;
+        for (; id[i] && i < k_cGamePhaseIDStrMaxLen - 1; i++) { r->m_rgchPhaseID[i] = id[i]; }
+        r->m_rgchPhaseID[i]    = '\0';
+        r->m_ulRecordingMS     = 60000;
+        r->m_ulLongestClipMS   = 15000;
+        r->m_unClipCount       = 2;
+        r->m_unScreenshotCount = 3;
+        return true;
+    }
     return false;
 }
+
+/* ISteamTimeline — accessor + no-op annotations. Async "does...exist" calls
+ * return deterministic fake handles (10 = event, 11 = game phase). */
+ISteamTimeline* SteamAPI_SteamTimeline_v004(void) { return (ISteamTimeline*)&mock_instance; }
+
+void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode) { }
+void SteamAPI_ISteamTimeline_SetTimelineTooltip(ISteamTimeline *self, const char *description, float time_delta) { }
+void SteamAPI_ISteamTimeline_ClearTimelineTooltip(ISteamTimeline *self, float time_delta) { }
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddInstantaneousTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip) { return 100; }
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, float duration, ETimelineEventClipPriority possible_clip) { return 101; }
+TimelineEventHandle_t SteamAPI_ISteamTimeline_StartRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip) { return 102; }
+void SteamAPI_ISteamTimeline_UpdateRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, const char *title, const char *description, const char *icon, uint32 icon_priority, ETimelineEventClipPriority possible_clip) { }
+void SteamAPI_ISteamTimeline_EndRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, float end_offset_seconds) { }
+void SteamAPI_ISteamTimeline_RemoveTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event) { }
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesEventRecordingExist(ISteamTimeline *self, TimelineEventHandle_t event) { return 10; }
+void SteamAPI_ISteamTimeline_StartGamePhase(ISteamTimeline *self) { }
+void SteamAPI_ISteamTimeline_EndGamePhase(ISteamTimeline *self) { }
+void SteamAPI_ISteamTimeline_SetGamePhaseID(ISteamTimeline *self, const char *phase_id) { }
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesGamePhaseRecordingExist(ISteamTimeline *self, const char *phase_id) { return 11; }
+void SteamAPI_ISteamTimeline_AddGamePhaseTag(ISteamTimeline *self, const char *tag_name, const char *tag_icon, const char *tag_group, uint32 priority) { }
+void SteamAPI_ISteamTimeline_SetGamePhaseAttribute(ISteamTimeline *self, const char *attribute_group, const char *attribute_value, uint32 priority) { }
+void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const char *phase_id) { }
+void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event) { }

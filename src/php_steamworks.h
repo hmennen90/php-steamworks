@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.9.0"
+#define PHP_STEAMWORKS_VERSION  "0.10.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -21,6 +21,8 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_LEADERBOARD_FIND = 1, /* LeaderboardFindResult_t (also find_or_create) */
     STEAMWORKS_CALL_SCORE_UPLOADED,       /* LeaderboardScoreUploaded_t */
     STEAMWORKS_CALL_SCORES_DOWNLOADED,    /* LeaderboardScoresDownloaded_t */
+    STEAMWORKS_CALL_TIMELINE_EVENT_RECORDING, /* SteamTimelineEventRecordingExists_t */
+    STEAMWORKS_CALL_TIMELINE_PHASE_RECORDING, /* SteamTimelineGamePhaseRecordingExists_t */
 };
 
 void steamworks_async_minit(void);
@@ -97,5 +99,25 @@ PHP_FUNCTION(steam_utils_get_steam_ui_language);
 PHP_FUNCTION(steam_utils_get_server_real_time);
 PHP_FUNCTION(steam_utils_get_current_battery_power);
 PHP_FUNCTION(steam_utils_get_seconds_since_app_active);
+
+/* steam_timeline.c */
+PHP_FUNCTION(steam_timeline_set_game_mode);
+PHP_FUNCTION(steam_timeline_set_tooltip);
+PHP_FUNCTION(steam_timeline_clear_tooltip);
+PHP_FUNCTION(steam_timeline_add_instantaneous_event);
+PHP_FUNCTION(steam_timeline_add_range_event);
+PHP_FUNCTION(steam_timeline_start_range_event);
+PHP_FUNCTION(steam_timeline_update_range_event);
+PHP_FUNCTION(steam_timeline_end_range_event);
+PHP_FUNCTION(steam_timeline_remove_event);
+PHP_FUNCTION(steam_timeline_does_event_recording_exist);
+PHP_FUNCTION(steam_timeline_start_game_phase);
+PHP_FUNCTION(steam_timeline_end_game_phase);
+PHP_FUNCTION(steam_timeline_set_game_phase_id);
+PHP_FUNCTION(steam_timeline_does_game_phase_recording_exist);
+PHP_FUNCTION(steam_timeline_add_game_phase_tag);
+PHP_FUNCTION(steam_timeline_set_game_phase_attribute);
+PHP_FUNCTION(steam_timeline_open_overlay_to_game_phase);
+PHP_FUNCTION(steam_timeline_open_overlay_to_event);
 
 #endif /* PHP_STEAMWORKS_H */

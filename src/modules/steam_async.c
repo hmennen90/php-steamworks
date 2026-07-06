@@ -138,6 +138,43 @@ PHP_FUNCTION(steam_get_call_result)
             add_assoc_long(return_value, "count", (zend_long)result.m_cEntryCount);
             return;
         }
+        case STEAMWORKS_CALL_TIMELINE_EVENT_RECORDING: {
+            /* Layout + callback id (6002) verified against Steamworks SDK 1.64. */
+            SteamTimelineEventRecordingExists_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_SteamTimelineEventRecordingExists, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read timeline event recording result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "timeline_event_recording_exists");
+            add_assoc_long(return_value, "event", (zend_long)result.m_ulEventID);
+            add_assoc_bool(return_value, "recording_exists", result.m_bRecordingExists != 0);
+            return;
+        }
+        case STEAMWORKS_CALL_TIMELINE_PHASE_RECORDING: {
+            /* Layout + callback id (6001) verified against Steamworks SDK 1.64. */
+            SteamTimelineGamePhaseRecordingExists_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_SteamTimelineGamePhaseRecordingExists, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read timeline game phase recording result");
+                RETURN_FALSE;
+            }
+            /* Ensure the phase id is NUL-terminated before handing it to PHP. */
+            result.m_rgchPhaseID[k_cGamePhaseIDStrMaxLen - 1] = '\0';
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "timeline_game_phase_recording_exists");
+            add_assoc_string(return_value, "phase_id", result.m_rgchPhaseID);
+            add_assoc_long(return_value, "recording_ms", (zend_long)result.m_ulRecordingMS);
+            add_assoc_long(return_value, "longest_clip_ms", (zend_long)result.m_ulLongestClipMS);
+            add_assoc_long(return_value, "clip_count", (zend_long)result.m_unClipCount);
+            add_assoc_long(return_value, "screenshot_count", (zend_long)result.m_unScreenshotCount);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;

@@ -255,9 +255,13 @@ function steam_stats_find_or_create_leaderboard(string $name, int $sort_method, 
  * @param int $leaderboard Leaderboard-Handle (aus dem find-Ergebnis)
  * @param int $score Der hochzuladende Score
  * @param int $method STEAM_LEADERBOARD_UPLOAD_KEEP_BEST (Default) oder _FORCE_UPDATE
+ * @param list<int>|null $details Optionale spielspezifische int32-Detailwerte (z. B. Split-Zeiten),
+ *                                die mit dem Eintrag gespeichert und beim Download wieder ausgelesen
+ *                                werden. Maximal STEAM_LEADERBOARD_DETAILS_MAX (64); überzählige
+ *                                werden verworfen.
  * @return int|false Call-Handle, false bei Fehler
  */
-function steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST): int|false {}
+function steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, ?array $details = null): int|false {}
 
 /**
  * Lädt Leaderboard-Einträge herunter (asynchron).
@@ -278,7 +282,8 @@ function steam_stats_download_leaderboard_entries(int $leaderboard, int $request
  *
  * @param int $entries Entries-Handle aus dem "scores_downloaded"-Ergebnis
  * @param int $index 0-basierter Index innerhalb des heruntergeladenen Bereichs
- * @return array{steam_id:int, global_rank:int, score:int, details:int}|null
+ * @return array{steam_id:int, global_rank:int, score:int, details:list<int>}|null
+ *         `details` enthält die beim Upload mitgegebenen int32-Werte (leeres Array, wenn keine).
  */
 function steam_stats_get_downloaded_entry(int $entries, int $index): ?array {}
 
@@ -298,7 +303,8 @@ function steam_stats_get_leaderboard_entry_count(int $leaderboard): int {}
  *   - null  → noch nicht fertig (erneut pollen) oder unbekanntes/verbrauchtes Handle
  *   - false → Call ist fehlgeschlagen
  *   - array → Ergebnis mit 'type'-Feld ("leaderboard_found", "score_uploaded",
- *             "scores_downloaded"); das Handle ist danach verbraucht.
+ *             "scores_downloaded", "timeline_event_recording_exists",
+ *             "timeline_game_phase_recording_exists"); das Handle ist danach verbraucht.
  *
  * @param int $handle Call-Handle einer asynchronen steam_*-Funktion
  * @return array|false|null
@@ -482,3 +488,184 @@ function steam_utils_get_current_battery_power(): int|false {}
  * @return int|false Sekunden, false bei Fehler
  */
 function steam_utils_get_seconds_since_app_active(): int|false {}
+
+/* ── steam_timeline.c (ISteamTimeline / Game Recording) ──
+ *
+ * Annotiert die Steam-Game-Recording-Timeline. Die meisten Funktionen sind
+ * "fire and forget" (true bei Erfolg, false wenn Steam nicht initialisiert).
+ * Die beiden does_*_recording_exist-Funktionen sind asynchron und geben ein
+ * Call-Handle zurück (via steam_get_call_result() pollen).
+ */
+
+/**
+ * Setzt den aktuellen Spielmodus für die Timeline.
+ *
+ * @param int $mode STEAM_TIMELINE_GAME_MODE_PLAYING|_STAGING|_MENUS|_LOADING_SCREEN|_INVALID
+ * @return bool true bei Erfolg, false wenn Steam nicht initialisiert
+ */
+function steam_timeline_set_game_mode(int $mode): bool {}
+
+/**
+ * Setzt die Tooltip-/State-Beschreibung für den aktuellen Timeline-Abschnitt.
+ *
+ * @param string $description Beschreibung (z.B. "Level 3 – Boss")
+ * @param float $time_delta Zeitversatz in Sekunden relativ zu jetzt (0 = jetzt)
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_set_tooltip(string $description, float $time_delta = 0.0): bool {}
+
+/**
+ * Entfernt die Tooltip-/State-Beschreibung.
+ *
+ * @param float $time_delta Zeitversatz in Sekunden relativ zu jetzt
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_clear_tooltip(float $time_delta = 0.0): bool {}
+
+/**
+ * Fügt ein punktuelles (instantanes) Timeline-Event hinzu.
+ *
+ * @param string $title Kurztitel
+ * @param string $description Beschreibung
+ * @param string $icon Icon-Name (Steam-Timeline-Icon oder hochgeladenes Icon)
+ * @param int $icon_priority Priorität für die Icon-Darstellung (höher = wichtiger)
+ * @param float $start_offset_seconds Zeitversatz in Sekunden relativ zu jetzt
+ * @param int $possible_clip STEAM_TIMELINE_CLIP_PRIORITY_NONE|_STANDARD|_FEATURED
+ * @return int Event-Handle (0 bei Fehler / Steam nicht initialisiert)
+ */
+function steam_timeline_add_instantaneous_event(string $title, string $description, string $icon, int $icon_priority = 0, float $start_offset_seconds = 0.0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): int {}
+
+/**
+ * Fügt ein Timeline-Event mit Dauer (Range) hinzu.
+ *
+ * @param string $title Kurztitel
+ * @param string $description Beschreibung
+ * @param string $icon Icon-Name
+ * @param int $icon_priority Icon-Priorität
+ * @param float $start_offset_seconds Startzeit-Versatz in Sekunden relativ zu jetzt
+ * @param float $duration_seconds Dauer des Events in Sekunden
+ * @param int $possible_clip STEAM_TIMELINE_CLIP_PRIORITY_*
+ * @return int Event-Handle (0 bei Fehler)
+ */
+function steam_timeline_add_range_event(string $title, string $description, string $icon, int $icon_priority = 0, float $start_offset_seconds = 0.0, float $duration_seconds = 0.0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): int {}
+
+/**
+ * Startet ein offenes Range-Event, das später mit steam_timeline_end_range_event()
+ * abgeschlossen wird. Nützlich für Events unbekannter Dauer.
+ *
+ * @param string $title Kurztitel
+ * @param string $description Beschreibung
+ * @param string $icon Icon-Name
+ * @param int $icon_priority Icon-Priorität
+ * @param float $start_offset_seconds Startzeit-Versatz in Sekunden relativ zu jetzt
+ * @param int $possible_clip STEAM_TIMELINE_CLIP_PRIORITY_*
+ * @return int Event-Handle für update/end (0 bei Fehler)
+ */
+function steam_timeline_start_range_event(string $title, string $description, string $icon, int $icon_priority = 0, float $start_offset_seconds = 0.0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): int {}
+
+/**
+ * Aktualisiert Titel/Beschreibung/Icon eines offenen Range-Events.
+ *
+ * @param int $event Event-Handle aus steam_timeline_start_range_event()
+ * @param string $title Neuer Titel
+ * @param string $description Neue Beschreibung
+ * @param string $icon Neues Icon
+ * @param int $icon_priority Icon-Priorität
+ * @param int $possible_clip STEAM_TIMELINE_CLIP_PRIORITY_*
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_update_range_event(int $event, string $title, string $description, string $icon, int $icon_priority = 0, int $possible_clip = STEAM_TIMELINE_CLIP_PRIORITY_NONE): bool {}
+
+/**
+ * Schließt ein zuvor mit steam_timeline_start_range_event() gestartetes Event ab.
+ *
+ * @param int $event Event-Handle
+ * @param float $end_offset_seconds Endzeit-Versatz in Sekunden relativ zu jetzt
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_end_range_event(int $event, float $end_offset_seconds = 0.0): bool {}
+
+/**
+ * Entfernt ein Timeline-Event wieder.
+ *
+ * @param int $event Event-Handle
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_remove_event(int $event): bool {}
+
+/**
+ * Prüft asynchron, ob für ein Event eine Aufnahme (Clip) existiert.
+ * Ergebnis über steam_get_call_result() (Typ "timeline_event_recording_exists").
+ *
+ * @param int $event Event-Handle
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_timeline_does_event_recording_exist(int $event): int|false {}
+
+/**
+ * Beginnt eine neue Game-Phase (gruppiert Gameplay für spätere Navigation).
+ *
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_start_game_phase(): bool {}
+
+/**
+ * Beendet die aktuelle Game-Phase.
+ *
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_end_game_phase(): bool {}
+
+/**
+ * Setzt eine ID für die aktuelle Game-Phase (zum späteren Wiederauffinden).
+ *
+ * @param string $phase_id Phase-ID (max STEAM_TIMELINE_PHASE_ID-Länge)
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_set_game_phase_id(string $phase_id): bool {}
+
+/**
+ * Prüft asynchron, ob für eine Game-Phase eine Aufnahme existiert.
+ * Ergebnis über steam_get_call_result() (Typ "timeline_game_phase_recording_exists").
+ *
+ * @param string $phase_id Phase-ID
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_timeline_does_game_phase_recording_exist(string $phase_id): int|false {}
+
+/**
+ * Hängt ein Tag an die aktuelle Game-Phase (z.B. "Boss: Drache").
+ *
+ * @param string $tag_name Tag-Name
+ * @param string $tag_icon Icon-Name für das Tag
+ * @param string $tag_group Gruppe, unter der das Tag einsortiert wird
+ * @param int $priority Priorität für die Darstellung
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_add_game_phase_tag(string $tag_name, string $tag_icon, string $tag_group, int $priority = 0): bool {}
+
+/**
+ * Setzt ein Attribut (Key/Value) an der aktuellen Game-Phase.
+ *
+ * @param string $attribute_group Attribut-Gruppe (Key)
+ * @param string $attribute_value Attribut-Wert
+ * @param int $priority Priorität
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_set_game_phase_attribute(string $attribute_group, string $attribute_value, int $priority = 0): bool {}
+
+/**
+ * Öffnet das Steam-Overlay auf einer bestimmten Game-Phase.
+ *
+ * @param string $phase_id Phase-ID
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_open_overlay_to_game_phase(string $phase_id): bool {}
+
+/**
+ * Öffnet das Steam-Overlay auf einem bestimmten Timeline-Event.
+ *
+ * @param int $event Event-Handle
+ * @return bool true bei Erfolg
+ */
+function steam_timeline_open_overlay_to_event(int $event): bool {}

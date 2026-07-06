@@ -21,6 +21,7 @@ typedef void ISteamUserStats;
 typedef void ISteamRemoteStorage;
 typedef void ISteamApps;
 typedef void ISteamUtils;
+typedef void ISteamTimeline;
 
 /* SDK typedefs */
 typedef uint32_t AppId_t;
@@ -36,6 +37,7 @@ typedef uint64_t SteamLeaderboard_t;
 typedef uint64_t SteamLeaderboardEntries_t;
 typedef uint64_t CSteamID_t;
 typedef uint64_t UGCHandle_t;
+typedef uint64_t TimelineEventHandle_t;   /* ISteamTimeline event handle */
 
 /* Leaderboard enums (values match the SDK exactly) */
 typedef enum {
@@ -64,12 +66,45 @@ typedef enum {
     k_ELeaderboardDataRequestUsers            = 3,
 } ELeaderboardDataRequest;
 
+/* Max int32 detail values attachable to a leaderboard entry (SDK: k_cLeaderboardDetailsMax). */
+#define k_cLeaderboardDetailsMax 64
+
+/* ── ISteamTimeline enums (values match the SDK) ───────────────────────────
+ * Verified against Steamworks SDK 1.64 (STEAMTIMELINE_INTERFACE_V004): enum values,
+ * accessor version (SteamTimeline_v004) and all flat signatures below match the real
+ * isteamtimeline.h / steam_api_flat.h. */
+typedef enum {
+    k_ETimelineGameMode_Invalid       = 0,
+    k_ETimelineGameMode_Playing       = 1,
+    k_ETimelineGameMode_Staging       = 2,
+    k_ETimelineGameMode_Menus         = 3,
+    k_ETimelineGameMode_LoadingScreen = 4,
+    k_ETimelineGameMode_Max           = 5,
+} ETimelineGameMode;
+
+typedef enum {
+    k_ETimelineEventClipPriority_Invalid  = 0,
+    k_ETimelineEventClipPriority_None     = 1,
+    k_ETimelineEventClipPriority_Standard = 2,
+    k_ETimelineEventClipPriority_Featured = 3,
+} ETimelineEventClipPriority;
+
+/* Max length of a game-phase ID string, incl. NUL (SDK: k_cGamePhaseIDStrMaxLen). */
+#define k_cGamePhaseIDStrMaxLen 64
+
 /* Callback IDs — needed as iCallbackExpected in GetAPICallResult.
    k_iSteamUserStatsCallbacks base is 1100 in the SDK. */
 enum {
     k_iCallback_LeaderboardFindResult       = 1100 + 4, /* 1104 */
     k_iCallback_LeaderboardScoresDownloaded = 1100 + 5, /* 1105 */
     k_iCallback_LeaderboardScoreUploaded    = 1100 + 6, /* 1106 */
+};
+
+/* ISteamTimeline callback IDs. k_iSteamTimelineCallbacks base is 6000 in the SDK
+   (verified against Steamworks SDK 1.64 steam_api_internal.h / isteamtimeline.h). */
+enum {
+    k_iCallback_SteamTimelineGamePhaseRecordingExists = 6000 + 1, /* 6001 */
+    k_iCallback_SteamTimelineEventRecordingExists      = 6000 + 2, /* 6002 */
 };
 
 /* CallResult structs — layout must match the SDK's callback packing exactly.
@@ -109,6 +144,21 @@ typedef struct {
     int32       m_cDetails;
     UGCHandle_t m_hUGC;
 } LeaderboardEntry_t;
+
+/* ISteamTimeline CallResult structs (V004). Field layout + sizes/offsets verified
+   against Steamworks SDK 1.64 (pack(8) Windows / pack(4) Linux/macOS confirmed). */
+typedef struct {
+    char   m_rgchPhaseID[k_cGamePhaseIDStrMaxLen];
+    uint64_t m_ulRecordingMS;
+    uint64_t m_ulLongestClipMS;
+    uint32 m_unClipCount;
+    uint32 m_unScreenshotCount;
+} SteamTimelineGamePhaseRecordingExists_t;
+
+typedef struct {
+    TimelineEventHandle_t m_ulEventID;
+    uint8_t               m_bRecordingExists;
+} SteamTimelineEventRecordingExists_t;
 #pragma pack(pop)
 
 /* Steam error message buffer (1024 bytes as per SDK) */
@@ -204,5 +254,31 @@ uint8       SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);
 uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsAPICallCompleted(ISteamUtils *self, SteamAPICall_t call, bool *failed);
 bool        SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t call, void *callback, int callback_size, int callback_expected, bool *failed);
+
+/* ── ISteamTimeline (V004) ─────────────────────────────────────────────────
+ * Game Recording / Timeline. Accessor version + all signatures verified against
+ * Steamworks SDK 1.64 (steam_api_flat.h lines 900-920). */
+void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode);
+void SteamAPI_ISteamTimeline_SetTimelineTooltip(ISteamTimeline *self, const char *description, float time_delta);
+void SteamAPI_ISteamTimeline_ClearTimelineTooltip(ISteamTimeline *self, float time_delta);
+
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddInstantaneousTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip);
+TimelineEventHandle_t SteamAPI_ISteamTimeline_AddRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, float duration, ETimelineEventClipPriority possible_clip);
+TimelineEventHandle_t SteamAPI_ISteamTimeline_StartRangeTimelineEvent(ISteamTimeline *self, const char *title, const char *description, const char *icon, uint32 icon_priority, float start_offset_seconds, ETimelineEventClipPriority possible_clip);
+void SteamAPI_ISteamTimeline_UpdateRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, const char *title, const char *description, const char *icon, uint32 icon_priority, ETimelineEventClipPriority possible_clip);
+void SteamAPI_ISteamTimeline_EndRangeTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event, float end_offset_seconds);
+void SteamAPI_ISteamTimeline_RemoveTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesEventRecordingExist(ISteamTimeline *self, TimelineEventHandle_t event);
+
+void SteamAPI_ISteamTimeline_StartGamePhase(ISteamTimeline *self);
+void SteamAPI_ISteamTimeline_EndGamePhase(ISteamTimeline *self);
+void SteamAPI_ISteamTimeline_SetGamePhaseID(ISteamTimeline *self, const char *phase_id);
+SteamAPICall_t SteamAPI_ISteamTimeline_DoesGamePhaseRecordingExist(ISteamTimeline *self, const char *phase_id);
+void SteamAPI_ISteamTimeline_AddGamePhaseTag(ISteamTimeline *self, const char *tag_name, const char *tag_icon, const char *tag_group, uint32 priority);
+void SteamAPI_ISteamTimeline_SetGamePhaseAttribute(ISteamTimeline *self, const char *attribute_group, const char *attribute_value, uint32 priority);
+void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const char *phase_id);
+void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
+
+ISteamTimeline *SteamAPI_SteamTimeline_v004(void);
 
 #endif /* STEAM_API_C_H */

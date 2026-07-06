@@ -342,15 +342,17 @@ PHP_FUNCTION(steam_stats_find_or_create_leaderboard)
 
 PHP_FUNCTION(steam_stats_upload_score)
 {
-    zend_long leaderboard;
-    zend_long score;
-    zend_long method = k_ELeaderboardUploadScoreMethodKeepBest;
+    zend_long  leaderboard;
+    zend_long  score;
+    zend_long  method = k_ELeaderboardUploadScoreMethodKeepBest;
+    HashTable *details_ht = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(2, 3)
+    ZEND_PARSE_PARAMETERS_START(2, 4)
         Z_PARAM_LONG(leaderboard)
         Z_PARAM_LONG(score)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(method)
+        Z_PARAM_ARRAY_HT_OR_NULL(details_ht)
     ZEND_PARSE_PARAMETERS_END();
 
     ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
@@ -359,10 +361,28 @@ PHP_FUNCTION(steam_stats_upload_score)
         RETURN_FALSE;
     }
 
+    /* Optional game-specific detail values (int32[]). Steam caps this at
+       k_cLeaderboardDetailsMax; extra values are dropped with a warning. */
+    int32 details[k_cLeaderboardDetailsMax];
+    int   details_count = 0;
+    if (details_ht) {
+        zval *val;
+        ZEND_HASH_FOREACH_VAL(details_ht, val) {
+            if (details_count >= k_cLeaderboardDetailsMax) {
+                php_error_docref(NULL, E_WARNING,
+                    "Leaderboard score details truncated to %d values",
+                    k_cLeaderboardDetailsMax);
+                break;
+            }
+            details[details_count++] = (int32)zval_get_long(val);
+        } ZEND_HASH_FOREACH_END();
+    }
+
     SteamAPICall_t call = SteamAPI_ISteamUserStats_UploadLeaderboardScore(
         stats, (SteamLeaderboard_t)leaderboard,
         (ELeaderboardUploadScoreMethod)method,
-        (int32)score, NULL, 0);
+        (int32)score,
+        details_count > 0 ? details : NULL, details_count);
     if (call == 0) {
         RETURN_FALSE;
     }
@@ -418,9 +438,11 @@ PHP_FUNCTION(steam_stats_get_downloaded_entry)
     }
 
     LeaderboardEntry_t entry;
+    int32              details[k_cLeaderboardDetailsMax];
     memset(&entry, 0, sizeof(entry));
     if (!SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(
-            stats, (SteamLeaderboardEntries_t)entries, (int)index, &entry, NULL, 0)) {
+            stats, (SteamLeaderboardEntries_t)entries, (int)index, &entry,
+            details, k_cLeaderboardDetailsMax)) {
         RETURN_NULL();
     }
 
@@ -428,7 +450,19 @@ PHP_FUNCTION(steam_stats_get_downloaded_entry)
     add_assoc_long(return_value, "steam_id",    (zend_long)entry.m_steamIDUser);
     add_assoc_long(return_value, "global_rank", (zend_long)entry.m_nGlobalRank);
     add_assoc_long(return_value, "score",       (zend_long)entry.m_nScore);
-    add_assoc_long(return_value, "details",     (zend_long)entry.m_cDetails);
+
+    /* The int32 detail values uploaded alongside the score (empty array if none).
+       m_cDetails reports how many were written into the buffer. */
+    zval details_arr;
+    array_init(&details_arr);
+    int32 detail_count = entry.m_cDetails;
+    if (detail_count > k_cLeaderboardDetailsMax) {
+        detail_count = k_cLeaderboardDetailsMax;
+    }
+    for (int32 i = 0; i < detail_count; i++) {
+        add_next_index_long(&details_arr, (zend_long)details[i]);
+    }
+    add_assoc_zval(return_value, "details", &details_arr);
 }
 
 PHP_FUNCTION(steam_stats_get_leaderboard_entry_count)

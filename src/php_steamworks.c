@@ -1,4 +1,5 @@
 #include "php_steamworks.h"
+#include "steam_api_c.h"  /* k_cLeaderboardDetailsMax for STEAM_LEADERBOARD_DETAILS_MAX */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_void, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -61,6 +62,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lb_upload, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, leaderboard, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, score, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, method, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, details, IS_ARRAY, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lb_download, 0, 0, 4)
@@ -73,6 +75,71 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_two_longs, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, a, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, b, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+/* ── ISteamTimeline arginfo ── */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_set_tooltip, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, time_delta, IS_DOUBLE, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_clear_tooltip, 0, 0, 0)
+    ZEND_ARG_TYPE_INFO(0, time_delta, IS_DOUBLE, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_add_instant, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, title, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon_priority, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, start_offset_seconds, IS_DOUBLE, 0)
+    ZEND_ARG_TYPE_INFO(0, possible_clip, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_add_range, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, title, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon_priority, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, start_offset_seconds, IS_DOUBLE, 0)
+    ZEND_ARG_TYPE_INFO(0, duration_seconds, IS_DOUBLE, 0)
+    ZEND_ARG_TYPE_INFO(0, possible_clip, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_start_range, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, title, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon_priority, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, start_offset_seconds, IS_DOUBLE, 0)
+    ZEND_ARG_TYPE_INFO(0, possible_clip, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_update_range, 0, 0, 4)
+    ZEND_ARG_TYPE_INFO(0, event, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, title, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, icon_priority, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, possible_clip, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_end_range, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, event, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, end_offset_seconds, IS_DOUBLE, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_phase_tag, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, tag_name, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, tag_icon, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, tag_group, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, priority, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_phase_attr, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, attribute_group, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, attribute_value, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, priority, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
 static const zend_function_entry steamworks_functions[] = {
@@ -146,6 +213,26 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_utils_get_current_battery_power, arginfo_steam_void)
     PHP_FE(steam_utils_get_seconds_since_app_active, arginfo_steam_void)
 
+    /* steam_timeline.c */
+    PHP_FE(steam_timeline_set_game_mode,    arginfo_steam_one_long)
+    PHP_FE(steam_timeline_set_tooltip,      arginfo_steam_tl_set_tooltip)
+    PHP_FE(steam_timeline_clear_tooltip,    arginfo_steam_tl_clear_tooltip)
+    PHP_FE(steam_timeline_add_instantaneous_event, arginfo_steam_tl_add_instant)
+    PHP_FE(steam_timeline_add_range_event,  arginfo_steam_tl_add_range)
+    PHP_FE(steam_timeline_start_range_event, arginfo_steam_tl_start_range)
+    PHP_FE(steam_timeline_update_range_event, arginfo_steam_tl_update_range)
+    PHP_FE(steam_timeline_end_range_event,  arginfo_steam_tl_end_range)
+    PHP_FE(steam_timeline_remove_event,     arginfo_steam_one_long)
+    PHP_FE(steam_timeline_does_event_recording_exist, arginfo_steam_one_long)
+    PHP_FE(steam_timeline_start_game_phase, arginfo_steam_void)
+    PHP_FE(steam_timeline_end_game_phase,   arginfo_steam_void)
+    PHP_FE(steam_timeline_set_game_phase_id, arginfo_steam_one_string)
+    PHP_FE(steam_timeline_does_game_phase_recording_exist, arginfo_steam_one_string)
+    PHP_FE(steam_timeline_add_game_phase_tag, arginfo_steam_tl_phase_tag)
+    PHP_FE(steam_timeline_set_game_phase_attribute, arginfo_steam_tl_phase_attr)
+    PHP_FE(steam_timeline_open_overlay_to_game_phase, arginfo_steam_one_string)
+    PHP_FE(steam_timeline_open_overlay_to_event, arginfo_steam_one_long)
+
     PHP_FE_END
 };
 
@@ -175,6 +262,22 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_GLOBAL",             0, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER", 1, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DATA_FRIENDS",            2, CONST_CS | CONST_PERSISTENT);
+
+    /* Max int32 detail values per leaderboard entry (SDK k_cLeaderboardDetailsMax). */
+    REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DETAILS_MAX", k_cLeaderboardDetailsMax, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamTimeline: game modes (ETimelineGameMode). */
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_INVALID",        k_ETimelineGameMode_Invalid,       CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_PLAYING",        k_ETimelineGameMode_Playing,       CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_STAGING",        k_ETimelineGameMode_Staging,       CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_MENUS",          k_ETimelineGameMode_Menus,         CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_LOADING_SCREEN", k_ETimelineGameMode_LoadingScreen, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamTimeline: event clip priority (ETimelineEventClipPriority). */
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_INVALID",  k_ETimelineEventClipPriority_Invalid,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_NONE",     k_ETimelineEventClipPriority_None,     CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_STANDARD", k_ETimelineEventClipPriority_Standard, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_FEATURED", k_ETimelineEventClipPriority_Featured, CONST_CS | CONST_PERSISTENT);
 
     return SUCCESS;
 }

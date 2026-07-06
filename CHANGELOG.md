@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.10.0] - 2026-07-06
+
+### Added
+- **ISteamTimeline (Game Recording / Timeline, Phase 3)** — neues Modul
+  `src/modules/steam_timeline.c` mit 18 Funktionen (voller Umfang inkl. Game Phases),
+  modelliert auf SDK V004 (1.62/1.64):
+  - Zustand: `steam_timeline_set_game_mode()`, `steam_timeline_set_tooltip()`,
+    `steam_timeline_clear_tooltip()`.
+  - Events: `steam_timeline_add_instantaneous_event()`, `steam_timeline_add_range_event()`,
+    `steam_timeline_start_range_event()` / `steam_timeline_update_range_event()` /
+    `steam_timeline_end_range_event()`, `steam_timeline_remove_event()` (geben ein
+    Event-Handle zurück), plus asynchron `steam_timeline_does_event_recording_exist()`.
+  - Game Phases: `steam_timeline_start_game_phase()` / `steam_timeline_end_game_phase()`,
+    `steam_timeline_set_game_phase_id()`, `steam_timeline_add_game_phase_tag()`,
+    `steam_timeline_set_game_phase_attribute()`, asynchron
+    `steam_timeline_does_game_phase_recording_exist()`.
+  - Overlay: `steam_timeline_open_overlay_to_game_phase()`, `steam_timeline_open_overlay_to_event()`.
+  - Neue Konstanten `STEAM_TIMELINE_GAME_MODE_*` und `STEAM_TIMELINE_CLIP_PRIORITY_*`.
+  - Die beiden asynchronen `does_*_recording_exist`-Calls sind in die vorhandene
+    Handle+Poll-Infrastruktur eingehängt; `steam_get_call_result()` liefert die Typen
+    `timeline_event_recording_exists` und `timeline_game_phase_recording_exists`.
+- **Leaderboard Score-Details (`int32[]`)** — der zuvor zurückgestellte Follow-up:
+  - `steam_stats_upload_score($leaderboard, $score, $method, $details = null)` — optionaler
+    vierter Parameter `$details` (Array von ints), das mit dem Score gespeichert wird
+    (z. B. Split-Zeiten, Waffen-IDs). Wird intern in einen `int32`-Buffer kopiert;
+    mehr als `STEAM_LEADERBOARD_DETAILS_MAX` (64) Werte werden mit Warning verworfen.
+  - `steam_stats_get_downloaded_entry()` liest die Details jetzt tatsächlich aus:
+    Der Rückgabe-Schlüssel `details` ist nun ein **Array** der gespeicherten int32-Werte
+    (vorher fälschlich nur die Anzahl `m_cDetails`). Leeres Array, wenn keine Details.
+  - Neue Konstante `STEAM_LEADERBOARD_DETAILS_MAX` (= 64).
+
+### Changed
+- **BREAKING (nur Leaderboard-Details):** `steam_stats_get_downloaded_entry()` liefert unter
+  `details` statt eines Integers (Detail-*Anzahl*) jetzt ein Integer-*Array* der Detailwerte.
+
+### Verified
+- **Score-Details:** Flat-Signaturen (`UploadLeaderboardScore`/`GetDownloadedLeaderboardEntry`
+  mit `details`/`details_count`) und die Struct-Größen (`LeaderboardEntry_t`,
+  `LeaderboardScoreUploaded_t`) gegen den Mock unter MSVC gebaut und per ABI-Cross-Check
+  zwischen `src/steam_api_c.h` und dem Mock-Header bestätigt (pack(8) *und* pack(4)).
+- **ISteamTimeline gegen echte Steamworks SDK 1.64 verifiziert** (STEAMTIMELINE_INTERFACE_V004),
+  per C++-Probe gegen die realen Header (`isteamtimeline.h`, `steam_api_flat.h`,
+  `steam_api_internal.h`) belegt:
+  1. Accessor `SteamAPI_SteamTimeline_v004` ✓.
+  2. Alle 18 Flat-Signaturen + Parameterreihenfolge stimmen 1:1 (steam_api_flat.h Z. 900–920).
+  3. Struct-Layouts von `SteamTimelineEventRecordingExists_t` (16 B) /
+     `SteamTimelineGamePhaseRecordingExists_t` (88 B) sowie `k_cchMaxPhaseIDLength` = 64 ✓.
+  4. **Callback-IDs korrigiert:** Basis `k_iSteamTimelineCallbacks` ist **6000** (nicht 6600),
+     also 6001 (GamePhase) / 6002 (Event) — beim Schätzen zunächst falsch, gegen die echte SDK
+     gefixt (klassische ABI-Abweichung, die der Mock nicht fängt).
+
 ## [0.9.0] - 2026-07-05
 
 ### Fixed

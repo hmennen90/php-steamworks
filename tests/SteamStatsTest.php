@@ -119,4 +119,40 @@ class SteamStatsTest extends TestCase
     {
         $this->assertIsBool(@steam_stats_reset_all_stats(false));
     }
+
+    /* ── Leaderboard score details (int32[]) ── */
+
+    public function testLeaderboardDetailsMaxConstantDefined(): void
+    {
+        $this->assertTrue(defined('STEAM_LEADERBOARD_DETAILS_MAX'));
+        $this->assertSame(64, STEAM_LEADERBOARD_DETAILS_MAX);
+    }
+
+    public function testUploadScoreAcceptsDetailsArray(): void
+    {
+        // Passing an int[] details argument must not TypeError; returns a call
+        // handle (mock) or false (no Steam). Over-long arrays are truncated, not fatal.
+        $result = @steam_stats_upload_score(42, 1000, STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, [1, -2, 3]);
+        $this->assertTrue(is_int($result) || $result === false);
+    }
+
+    public function testUploadScoreDetailsAcceptsNull(): void
+    {
+        $result = @steam_stats_upload_score(42, 1000, STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, null);
+        $this->assertTrue(is_int($result) || $result === false);
+    }
+
+    public function testGetDownloadedEntryDetailsIsArray(): void
+    {
+        // Mock fills the entry (details => list<int>); real without Steam -> null.
+        $entry = @steam_stats_get_downloaded_entry(0, 0);
+        $this->assertTrue($entry === null || is_array($entry));
+        if (is_array($entry)) {
+            $this->assertArrayHasKey('details', $entry);
+            $this->assertIsArray($entry['details']);
+            foreach ($entry['details'] as $value) {
+                $this->assertIsInt($value);
+            }
+        }
+    }
 }
