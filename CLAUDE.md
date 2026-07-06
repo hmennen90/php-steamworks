@@ -35,8 +35,8 @@ php-steamworks/
 │   │   ├── steam_apps.c        ← ISteamApps: DLC, Beta, Language, AppID
 │   │   ├── steam_utils.c       ← ISteamUtils: Overlay, AppID, Country, Language
 │   │   ├── steam_async.c       ← Async CallResults (Handle+Poll): steam_get_call_result
-│   │   └── steam_timeline.c    ← ISteamTimeline: Game Recording, Events, Game Phases
-│   │   (steam_ugc.c            ← ISteamUGC: Workshop — Phase 3, noch nicht angelegt)
+│   │   ├── steam_timeline.c    ← ISteamTimeline: Game Recording, Events, Game Phases
+│   │   └── steam_ugc.c         ← ISteamUGC: Workshop (Consume-Pfad: subscribe/state/download)
 ├── stubs/
 │   └── steamworks.php          ← PHP-Stubs für IDE-Autocompletion (kein Runtime-Code)
 ├── tests/
@@ -228,12 +228,14 @@ steam_utils_get_country_code()
 
 ## Implementierungsreihenfolge (Priorität)
 
-**Stand v0.10.0: Phase 1 und Phase 2 vollständig, Phase 3 begonnen (72 Funktionen).**
+**Stand v0.11.0: Phase 1 und Phase 2 vollständig, Phase 3 weit fortgeschritten (92 Funktionen).**
 Zusätzlich umgesetzt: asynchrone CallResult-Infrastruktur (`steam_get_call_result()`,
 `src/modules/steam_async.c`), Achievement-Lesepfad, erweiterte Apps/Utils/User-Getter,
-Leaderboard-Score-Details (`int32[]`) sowie das komplette ISteamTimeline-Modul
-(Game Recording / Events / Game Phases, `src/modules/steam_timeline.c`) — Letzteres gegen
-die echte Steamworks SDK 1.64 (V004) verifiziert (Signaturen, Struct-Layouts, Callback-IDs).
+Leaderboard-Score-Details (`int32[]`), ISteamTimeline (Game Recording),
+ISteamFriends-Erweiterung (Freundesliste/Persona/Avatare), ISteamUser-Auth-Tickets
+(synchroner Kern) und ISteamUGC (Workshop-Consume-Pfad, `src/modules/steam_ugc.c`).
+Alles gegen die echte Steamworks SDK 1.64 verifiziert (Signaturen, Struct-Layouts, Callback-IDs).
+Offen: Callback-Dispatch-Subsystem (für `get_auth_ticket_for_web_api` + NetworkingSockets).
 
 ### Phase 1 — Launch-kritisch ✅ erledigt
 Diese Funktionen werden für jeden Steam-Release benötigt:
@@ -255,13 +257,19 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
 13. `steam_apps_is_dlc_installed()` — DLC-Prüfung
 
 ### Phase 3 — In Arbeit
-- **ISteamTimeline** (Game Recording) ✅ implementiert (`steam_timeline.c`, 18 Funktionen),
-  gegen echte SDK 1.64 (V004) verifiziert — Signaturen, Struct-Layouts und Callback-IDs
-  (6000-Basis) per C++-Probe gegen die realen Header bestätigt
-- **Auth-Tickets** (`steam_user_get_auth_session_ticket` / `get_auth_ticket_for_web_api`) — Server-/Backend-Auth für Online-Games; async, nutzt die vorhandene Handle+Poll-Infrastruktur
-- **ISteamFriends erweitern** — Freundesliste, Persona-State, Avatare
-- **ISteamUGC** (Workshop) — nur wenn Mod-Support über Steam Workshop
-- **ISteamNetworkingSockets/Messages** — nur für Multiplayer-Transport
+- **ISteamTimeline** (Game Recording) ✅ (`steam_timeline.c`, 18 Fkt., V004) — real-SDK-verifiziert
+- **ISteamFriends erweitern** ✅ (`steam_friends.c`) — Freundesliste, Persona-State, Avatare (RGBA)
+- **Auth-Tickets** ✅ synchroner Kern (`steam_user.c`): `get_auth_session_ticket`,
+  `begin/end_auth_session`, `cancel_auth_ticket`. **Offen:** `get_auth_ticket_for_web_api`
+  (Backend-Auth) — liefert das Ticket per Callback, braucht das Callback-Dispatch-Subsystem
+- **ISteamUGC** (Workshop) ✅ Consume-Pfad (`steam_ugc.c`, V021): subscribe/state/install/download.
+  **Offen:** Browsing/Query (`GetQueryUGCResult`/`SteamUGCDetails_t`)
+- **Callback-Dispatch-Subsystem** (ManualDispatch) — Voraussetzung für allgemeine Callbacks
+  (nicht CallResults); nötig für Web-API-Auth-Ticket und NetworkingSockets. Ändert
+  `steam_run_callbacks()` — sorgfältig gegen den verifizierten Async-Pfad umsetzen
+- **ISteamNetworkingSockets/Messages** — nur für Multiplayer-Transport; braucht das
+  Callback-Subsystem + Binding referenzgezählter Message-Structs; realistisch nur gegen
+  echtes Steam (P2P) verifizierbar
 
 ### Zurückgestellt (dokumentiert)
 - Score-`details`-Arrays (`int32[]`) bei Leaderboard-Upload/Download ✅ erledigt in v0.10.0
@@ -313,7 +321,8 @@ if test "$PHP_STEAMWORKS" != "no"; then
     src/modules/steam_remote.c \
     src/modules/steam_apps.c \
     src/modules/steam_utils.c \
-    src/modules/steam_timeline.c,
+    src/modules/steam_timeline.c \
+    src/modules/steam_ugc.c,
     $ext_shared)
 fi
 ```

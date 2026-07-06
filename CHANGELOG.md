@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.11.0] - 2026-07-06 (unreleased)
+
+Phase 3 — social, identity & Workshop. All flat signatures, struct layouts and
+callback IDs verified against the real Steamworks SDK 1.64.
+
+### Added
+- **ISteamFriends — friends list, persona state & avatars** (`steam_friends.c`):
+  `get_persona_state`, `get_friend_count`/`get_friend_by_index` (EFriendFlags),
+  `get_friend_relationship`, `get_friend_persona_state`/`get_friend_persona_name`,
+  `request_user_information`, and `get_friend_avatar` (raw RGBA8888 bytes +
+  dimensions via ISteamUtils GetImageSize/GetImageRGBA). New STEAM_PERSONA_STATE_*,
+  STEAM_FRIEND_RELATIONSHIP_*, STEAM_FRIEND_FLAG_*, STEAM_AVATAR_* constants.
+- **ISteamUser — auth session tickets** (`steam_user.c`):
+  `get_auth_session_ticket` (returns `{handle, raw ticket bytes}`),
+  `begin_auth_session` (verifies a peer ticket → EBeginAuthSessionResult),
+  `end_auth_session`, `cancel_auth_ticket`. New STEAM_BEGIN_AUTH_SESSION_* constants.
+- **ISteamUGC — Workshop consume path** (`steam_ugc.c`, V021):
+  `subscribe_item`/`unsubscribe_item` (async → `ugc_subscribed`/`ugc_unsubscribed`),
+  `get_num_subscribed_items`/`get_subscribed_items`, `get_item_state`
+  (STEAM_UGC_ITEM_STATE_* bitflags), `get_item_install_info`,
+  `get_item_download_info`, `download_item`.
+
+### Deferred (needs a callback-dispatch subsystem)
+- `steam_user_get_auth_ticket_for_web_api()` — its ticket arrives via the
+  GetTicketForWebApiResponse_t *callback*, not a CallResult.
+- **ISteamNetworkingSockets** — connection status is delivered via callback and
+  received messages are reference-counted structs; both require the callback pump.
+- ISteamUGC querying/browsing (CreateQuery* + GetQueryUGCResult / SteamUGCDetails_t).
+
 ## [0.10.0] - 2026-07-06
 
 ### Added
