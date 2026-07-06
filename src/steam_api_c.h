@@ -22,6 +22,7 @@ typedef void ISteamRemoteStorage;
 typedef void ISteamApps;
 typedef void ISteamUtils;
 typedef void ISteamTimeline;
+typedef void ISteamUGC;
 
 /* SDK typedefs */
 typedef uint32_t AppId_t;
@@ -39,6 +40,8 @@ typedef uint64_t CSteamID_t;
 typedef uint64_t UGCHandle_t;
 typedef uint64_t TimelineEventHandle_t;   /* ISteamTimeline event handle */
 typedef uint32_t HAuthTicket;             /* ISteamUser auth ticket handle */
+typedef uint64_t UGCQueryHandle_t;        /* ISteamUGC query handle */
+typedef uint64_t PublishedFileId_t;       /* Workshop item id */
 
 /* Leaderboard enums (values match the SDK exactly) */
 typedef enum {
@@ -108,6 +111,13 @@ enum {
     k_iCallback_SteamTimelineEventRecordingExists      = 6000 + 2, /* 6002 */
 };
 
+/* ISteamUGC / RemoteStorage subscription CallResult IDs (verified vs SDK 1.64:
+   k_iSteamRemoteStorageCallbacks base = 1300). */
+enum {
+    k_iCallback_RemoteStorageSubscribePublishedFileResult   = 1300 + 13, /* 1313 */
+    k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15, /* 1315 */
+};
+
 /* CallResult structs — layout must match the SDK's callback packing exactly.
  * The SDK (steamclientpublic.h) uses pack(4) on Linux/macOS/FreeBSD and pack(8)
  * on Windows (VALVE_CALLBACK_PACK_SMALL vs _LARGE). Getting this wrong makes
@@ -160,6 +170,18 @@ typedef struct {
     TimelineEventHandle_t m_ulEventID;
     uint8_t               m_bRecordingExists;
 } SteamTimelineEventRecordingExists_t;
+
+/* ISteamUGC subscription CallResults (RemoteStorage*PublishedFileResult_t).
+   Same two-field layout for subscribe and unsubscribe; verified vs SDK 1.64. */
+typedef struct {
+    int32              m_eResult;          /* EResult (1 = OK) */
+    PublishedFileId_t  m_nPublishedFileId;
+} RemoteStorageSubscribePublishedFileResult_t;
+
+typedef struct {
+    int32              m_eResult;
+    PublishedFileId_t  m_nPublishedFileId;
+} RemoteStorageUnsubscribePublishedFileResult_t;
 #pragma pack(pop)
 
 /* Steam error message buffer (1024 bytes as per SDK) */
@@ -300,5 +322,20 @@ void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const 
 void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
 
 ISteamTimeline *SteamAPI_SteamTimeline_v004(void);
+
+/* ── ISteamUGC (Workshop, V021) — consume path ─────────────────────────────
+ * Verified against Steamworks SDK 1.64. Subscribe/Unsubscribe are async
+ * (SteamAPICall_t); the rest are synchronous. Query/GetQueryUGCResult
+ * (SteamUGCDetails_t) are intentionally not exposed yet. */
+SteamAPICall_t SteamAPI_ISteamUGC_SubscribeItem(ISteamUGC *self, PublishedFileId_t file_id);
+SteamAPICall_t SteamAPI_ISteamUGC_UnsubscribeItem(ISteamUGC *self, PublishedFileId_t file_id);
+uint32 SteamAPI_ISteamUGC_GetNumSubscribedItems(ISteamUGC *self, bool include_locally_disabled);
+uint32 SteamAPI_ISteamUGC_GetSubscribedItems(ISteamUGC *self, PublishedFileId_t *file_ids, uint32 max_entries, bool include_locally_disabled);
+uint32 SteamAPI_ISteamUGC_GetItemState(ISteamUGC *self, PublishedFileId_t file_id);
+bool   SteamAPI_ISteamUGC_GetItemInstallInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *size_on_disk, char *folder, uint32 folder_size, uint32 *timestamp);
+bool   SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *bytes_downloaded, uint64_t *bytes_total);
+bool   SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority);
+
+ISteamUGC *SteamAPI_SteamUGC_v021(void);
 
 #endif /* STEAM_API_C_H */

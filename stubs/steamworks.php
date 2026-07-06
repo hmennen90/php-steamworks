@@ -778,3 +778,79 @@ function steam_timeline_open_overlay_to_game_phase(string $phase_id): bool {}
  * @return bool true bei Erfolg
  */
 function steam_timeline_open_overlay_to_event(int $event): bool {}
+
+/* ── steam_ugc.c (ISteamUGC / Steam Workshop — Consume-Pfad) ──
+ *
+ * Abonnieren + nutzen von Workshop-Inhalten. subscribe/unsubscribe sind asynchron
+ * (Call-Handle → steam_get_call_result(), Typen "ugc_subscribed"/"ugc_unsubscribed"),
+ * der Rest ist synchron. Download-Fortschritt via get_item_download_info() /
+ * get_item_state() (STEAM_UGC_ITEM_STATE_INSTALLED) pollen.
+ */
+
+/**
+ * Abonniert ein Workshop-Item (asynchron).
+ *
+ * @param int $file_id PublishedFileId des Items
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_ugc_subscribe_item(int $file_id): int|false {}
+
+/**
+ * Kündigt das Abonnement eines Workshop-Items (asynchron).
+ *
+ * @param int $file_id PublishedFileId des Items
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_ugc_unsubscribe_item(int $file_id): int|false {}
+
+/**
+ * Anzahl der abonnierten Workshop-Items.
+ *
+ * @param bool $include_locally_disabled true = lokal deaktivierte mitzählen
+ * @return int|false Anzahl, false bei Fehler
+ */
+function steam_ugc_get_num_subscribed_items(bool $include_locally_disabled = false): int|false {}
+
+/**
+ * Liste der abonnierten Workshop-Item-IDs.
+ *
+ * @param bool $include_locally_disabled true = lokal deaktivierte einschließen
+ * @return int[]|false PublishedFileId-Liste, false bei Fehler
+ */
+function steam_ugc_get_subscribed_items(bool $include_locally_disabled = false): array|false {}
+
+/**
+ * Zustands-Bitmaske eines Items (STEAM_UGC_ITEM_STATE_*).
+ * Prüfen mit z.B. `($state & STEAM_UGC_ITEM_STATE_INSTALLED) !== 0`.
+ *
+ * @param int $file_id PublishedFileId
+ * @return int|false Bitmaske, false wenn Steam nicht initialisiert
+ */
+function steam_ugc_get_item_state(int $file_id): int|false {}
+
+/**
+ * Installations-Infos eines Items (nur wenn installiert).
+ *
+ * @param int $file_id PublishedFileId
+ * @return array{size_on_disk:int, folder:string, timestamp:int}|false
+ *         false wenn nicht installiert
+ */
+function steam_ugc_get_item_install_info(int $file_id): array|false {}
+
+/**
+ * Download-Fortschritt eines Items.
+ *
+ * @param int $file_id PublishedFileId
+ * @return array{bytes_downloaded:int, bytes_total:int}|false
+ */
+function steam_ugc_get_item_download_info(int $file_id): array|false {}
+
+/**
+ * Startet den Download eines Items. Fortschritt über get_item_download_info()
+ * bzw. get_item_state() (STEAM_UGC_ITEM_STATE_INSTALLED) pollen.
+ *
+ * @param int $file_id PublishedFileId
+ * @param bool $high_priority true = mit hoher Priorität herunterladen
+ * @return bool true wenn der Download gestartet wurde
+ */
+function steam_ugc_download_item(int $file_id, bool $high_priority = false): bool {}

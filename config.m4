@@ -24,7 +24,8 @@ if test "$PHP_STEAMWORKS" != "no"; then
     src/modules/steam_remote.c \
     src/modules/steam_apps.c \
     src/modules/steam_utils.c \
-    src/modules/steam_timeline.c"
+    src/modules/steam_timeline.c \
+    src/modules/steam_ugc.c"
 
   if test "$PHP_STEAMWORKS_MOCK" = "yes"; then
     dnl CI mock mode — use mock SDK headers and compiled mock implementation

@@ -264,6 +264,16 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_timeline_open_overlay_to_game_phase, arginfo_steam_one_string)
     PHP_FE(steam_timeline_open_overlay_to_event, arginfo_steam_one_long)
 
+    /* steam_ugc.c */
+    PHP_FE(steam_ugc_subscribe_item,        arginfo_steam_one_long)
+    PHP_FE(steam_ugc_unsubscribe_item,      arginfo_steam_one_long)
+    PHP_FE(steam_ugc_get_num_subscribed_items, arginfo_steam_optional_bool)
+    PHP_FE(steam_ugc_get_subscribed_items,  arginfo_steam_optional_bool)
+    PHP_FE(steam_ugc_get_item_state,        arginfo_steam_one_long)
+    PHP_FE(steam_ugc_get_item_install_info, arginfo_steam_one_long)
+    PHP_FE(steam_ugc_get_item_download_info, arginfo_steam_one_long)
+    PHP_FE(steam_ugc_download_item,         arginfo_steam_long_optional_bool)
+
     PHP_FE_END
 };
 
@@ -348,6 +358,16 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_INVALID_VERSION",   3, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_GAME_MISMATCH",     4, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_EXPIRED_TICKET",    5, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamUGC: item state bitflags for steam_ugc_get_item_state() (EItemState). */
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_NONE",             0,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_SUBSCRIBED",       1,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_LEGACY_ITEM",      2,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_INSTALLED",        4,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_NEEDS_UPDATE",     8,  CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOADING",      16, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOAD_PENDING", 32, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DISABLED_LOCALLY", 64, CONST_CS | CONST_PERSISTENT);
 
     return SUCCESS;
 }

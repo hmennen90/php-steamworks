@@ -22,6 +22,7 @@ ISteamUserStats*     SteamAPI_SteamUserStats_v013(void)     { return (ISteamUser
 ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void) { return (ISteamRemoteStorage*)&mock_instance; }
 ISteamApps*          SteamAPI_SteamApps_v009(void)          { return (ISteamApps*)&mock_instance; }
 ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtils*)&mock_instance; }
+ISteamUGC*           SteamAPI_SteamUGC_v021(void)           { return (ISteamUGC*)&mock_instance; }
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self) { return 0; }
@@ -204,6 +205,20 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
         r->m_unScreenshotCount = 3;
         return true;
     }
+    if (callback_expected == k_iCallback_RemoteStorageSubscribePublishedFileResult
+        && callback_size >= (int)sizeof(RemoteStorageSubscribePublishedFileResult_t)) {
+        RemoteStorageSubscribePublishedFileResult_t *r = (RemoteStorageSubscribePublishedFileResult_t *)callback;
+        r->m_eResult         = 1; /* k_EResultOK */
+        r->m_nPublishedFileId = 123456;
+        return true;
+    }
+    if (callback_expected == k_iCallback_RemoteStorageUnsubscribePublishedFileResult
+        && callback_size >= (int)sizeof(RemoteStorageUnsubscribePublishedFileResult_t)) {
+        RemoteStorageUnsubscribePublishedFileResult_t *r = (RemoteStorageUnsubscribePublishedFileResult_t *)callback;
+        r->m_eResult         = 1;
+        r->m_nPublishedFileId = 123456;
+        return true;
+    }
     return false;
 }
 
@@ -229,3 +244,33 @@ void SteamAPI_ISteamTimeline_AddGamePhaseTag(ISteamTimeline *self, const char *t
 void SteamAPI_ISteamTimeline_SetGamePhaseAttribute(ISteamTimeline *self, const char *attribute_group, const char *attribute_value, uint32 priority) { }
 void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const char *phase_id) { }
 void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event) { }
+
+/* ISteamUGC — deterministic Workshop stubs. Subscribe/Unsubscribe return fake
+ * handles (20/21). Two subscribed items; item 123456 is installed. */
+SteamAPICall_t SteamAPI_ISteamUGC_SubscribeItem(ISteamUGC *self, PublishedFileId_t file_id) { return 20; }
+SteamAPICall_t SteamAPI_ISteamUGC_UnsubscribeItem(ISteamUGC *self, PublishedFileId_t file_id) { return 21; }
+uint32 SteamAPI_ISteamUGC_GetNumSubscribedItems(ISteamUGC *self, bool include_locally_disabled) { return 2; }
+uint32 SteamAPI_ISteamUGC_GetSubscribedItems(ISteamUGC *self, PublishedFileId_t *file_ids, uint32 max_entries, bool include_locally_disabled) {
+    uint32 n = 0;
+    if (file_ids && max_entries > 0) { file_ids[n++] = 123456; }
+    if (file_ids && max_entries > 1) { file_ids[n++] = 234567; }
+    return n;
+}
+uint32 SteamAPI_ISteamUGC_GetItemState(ISteamUGC *self, PublishedFileId_t file_id) { return 1 | 4; } /* subscribed | installed */
+bool SteamAPI_ISteamUGC_GetItemInstallInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *size_on_disk, char *folder, uint32 folder_size, uint32 *timestamp) {
+    if (size_on_disk) { *size_on_disk = 4096; }
+    if (timestamp)    { *timestamp = 1609459200; }
+    if (folder && folder_size > 0) {
+        const char *p = "/mock/workshop/123456";
+        uint32 i = 0;
+        for (; p[i] && i < folder_size - 1; i++) { folder[i] = p[i]; }
+        folder[i] = '\0';
+    }
+    return true;
+}
+bool SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *bytes_downloaded, uint64_t *bytes_total) {
+    if (bytes_downloaded) { *bytes_downloaded = 4096; }
+    if (bytes_total)      { *bytes_total = 4096; }
+    return true;
+}
+bool SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority) { return true; }

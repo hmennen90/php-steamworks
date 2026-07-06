@@ -23,6 +23,8 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_SCORES_DOWNLOADED,    /* LeaderboardScoresDownloaded_t */
     STEAMWORKS_CALL_TIMELINE_EVENT_RECORDING, /* SteamTimelineEventRecordingExists_t */
     STEAMWORKS_CALL_TIMELINE_PHASE_RECORDING, /* SteamTimelineGamePhaseRecordingExists_t */
+    STEAMWORKS_CALL_UGC_SUBSCRIBE,            /* RemoteStorageSubscribePublishedFileResult_t */
+    STEAMWORKS_CALL_UGC_UNSUBSCRIBE,          /* RemoteStorageUnsubscribePublishedFileResult_t */
 };
 
 void steamworks_async_minit(void);
@@ -131,5 +133,15 @@ PHP_FUNCTION(steam_timeline_add_game_phase_tag);
 PHP_FUNCTION(steam_timeline_set_game_phase_attribute);
 PHP_FUNCTION(steam_timeline_open_overlay_to_game_phase);
 PHP_FUNCTION(steam_timeline_open_overlay_to_event);
+
+/* steam_ugc.c */
+PHP_FUNCTION(steam_ugc_subscribe_item);
+PHP_FUNCTION(steam_ugc_unsubscribe_item);
+PHP_FUNCTION(steam_ugc_get_num_subscribed_items);
+PHP_FUNCTION(steam_ugc_get_subscribed_items);
+PHP_FUNCTION(steam_ugc_get_item_state);
+PHP_FUNCTION(steam_ugc_get_item_install_info);
+PHP_FUNCTION(steam_ugc_get_item_download_info);
+PHP_FUNCTION(steam_ugc_download_item);
 
 #endif /* PHP_STEAMWORKS_H */

@@ -175,6 +175,38 @@ PHP_FUNCTION(steam_get_call_result)
             add_assoc_long(return_value, "screenshot_count", (zend_long)result.m_unScreenshotCount);
             return;
         }
+        case STEAMWORKS_CALL_UGC_SUBSCRIBE: {
+            RemoteStorageSubscribePublishedFileResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_RemoteStorageSubscribePublishedFileResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read UGC subscribe result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "ugc_subscribed");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
+            return;
+        }
+        case STEAMWORKS_CALL_UGC_UNSUBSCRIBE: {
+            RemoteStorageUnsubscribePublishedFileResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_RemoteStorageUnsubscribePublishedFileResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read UGC unsubscribe result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "ugc_unsubscribed");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;
