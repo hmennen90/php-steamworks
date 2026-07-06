@@ -91,6 +91,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_bool, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, flag, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_string_long, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, ticket, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, steam_id, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 /* ── ISteamTimeline arginfo ── */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_set_tooltip, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
@@ -166,6 +171,10 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_user_get_steam_id,         arginfo_steam_void)
     PHP_FE(steam_user_is_logged_on,         arginfo_steam_void)
     PHP_FE(steam_user_get_player_steam_level, arginfo_steam_void)
+    PHP_FE(steam_user_get_auth_session_ticket, arginfo_steam_void)
+    PHP_FE(steam_user_begin_auth_session,   arginfo_steam_string_long)
+    PHP_FE(steam_user_end_auth_session,     arginfo_steam_one_long)
+    PHP_FE(steam_user_cancel_auth_ticket,   arginfo_steam_one_long)
 
     /* steam_friends.c */
     PHP_FE(steam_friends_get_name,          arginfo_steam_void)
@@ -331,6 +340,14 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_AVATAR_SMALL",  0, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_AVATAR_MEDIUM", 1, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_AVATAR_LARGE",  2, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamUser: BeginAuthSession result (EBeginAuthSessionResult). */
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_OK",                0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_INVALID_TICKET",    1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_DUPLICATE_REQUEST", 2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_INVALID_VERSION",   3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_GAME_MISMATCH",     4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_BEGIN_AUTH_SESSION_EXPIRED_TICKET",    5, CONST_CS | CONST_PERSISTENT);
 
     return SUCCESS;
 }

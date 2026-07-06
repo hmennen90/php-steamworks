@@ -27,6 +27,16 @@ ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtil
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self) { return 0; }
 bool           SteamAPI_ISteamUser_BLoggedOn(ISteamUser *self) { return false; }
 int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self) { return 0; }
+HAuthTicket    SteamAPI_ISteamUser_GetAuthSessionTicket(ISteamUser *self, void *ticket, int max_ticket, uint32 *ticket_size, const void *identity) {
+    /* Return a fake 8-byte ticket + handle so the encode path is exercised. */
+    int n = max_ticket < 8 ? max_ticket : 8;
+    if (ticket) { for (int i = 0; i < n; i++) { ((unsigned char *)ticket)[i] = (unsigned char)(0xA0 + i); } }
+    if (ticket_size) { *ticket_size = (uint32)n; }
+    return 1; /* fake HAuthTicket */
+}
+int            SteamAPI_ISteamUser_BeginAuthSession(ISteamUser *self, const void *auth_ticket, int ticket_size, uint64_steamid steam_id) { return 0; } /* k_EBeginAuthSessionResultOK */
+void           SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steamid steam_id) { }
+void           SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle) { }
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self) { return "MockPlayer"; }

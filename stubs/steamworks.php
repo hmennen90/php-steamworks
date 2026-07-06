@@ -64,6 +64,45 @@ function steam_user_is_logged_on(): bool {}
  */
 function steam_user_get_player_steam_level(): int|false {}
 
+/**
+ * Erzeugt ein Auth-Session-Ticket, um den Spieler bei einem Game-Server/Peer
+ * zu authentifizieren (Gegenstelle prüft es via steam_user_begin_auth_session()).
+ *
+ * Hinweis: Der Ticket-Puffer wird synchron gefüllt, das Ticket ist aber erst
+ * garantiert gültig, sobald Steam den GetAuthSessionTicketResponse_t-Callback
+ * gesendet hat. Für reine Backend-/Web-Auth ist get_auth_ticket_for_web_api()
+ * vorzuziehen (folgt mit dem Callback-Dispatch-Subsystem).
+ *
+ * @return array{handle:int, ticket:string}|false handle für cancel_auth_ticket(),
+ *         ticket = rohe Bytes zum Versenden. false bei Fehler.
+ */
+function steam_user_get_auth_session_ticket(): array|false {}
+
+/**
+ * Verifiziert ein Auth-Ticket (aus get_auth_session_ticket()) einer Gegenstelle.
+ *
+ * @param string $ticket Rohe Ticket-Bytes
+ * @param int $steam_id SteamID des Nutzers, der das Ticket ausgestellt hat
+ * @return int|false STEAM_BEGIN_AUTH_SESSION_* (0 = OK), false wenn Steam nicht initialisiert
+ */
+function steam_user_begin_auth_session(string $ticket, int $steam_id): int|false {}
+
+/**
+ * Beendet eine mit begin_auth_session() gestartete Auth-Session.
+ *
+ * @param int $steam_id SteamID des Nutzers
+ * @return bool true bei Erfolg
+ */
+function steam_user_end_auth_session(int $steam_id): bool {}
+
+/**
+ * Storniert ein ausgestelltes Auth-Ticket (aus get_auth_session_ticket()).
+ *
+ * @param int $handle Ticket-Handle
+ * @return bool true bei Erfolg
+ */
+function steam_user_cancel_auth_ticket(int $handle): bool {}
+
 /* ── steam_friends.c ── */
 
 /**

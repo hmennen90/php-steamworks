@@ -24,6 +24,7 @@ typedef uint64_t SteamLeaderboardEntries_t;
 typedef uint64_t CSteamID_t;
 typedef uint64_t UGCHandle_t;
 typedef uint64_t TimelineEventHandle_t;
+typedef uint32_t HAuthTicket;
 
 typedef void ISteamUser;
 typedef void ISteamFriends;

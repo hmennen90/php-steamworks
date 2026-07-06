@@ -142,6 +142,10 @@ ISteamTimeline*      SteamAPI_SteamTimeline_v004(void);
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
 bool           SteamAPI_ISteamUser_BLoggedOn(ISteamUser *self);
 int            SteamAPI_ISteamUser_GetPlayerSteamLevel(ISteamUser *self);
+HAuthTicket    SteamAPI_ISteamUser_GetAuthSessionTicket(ISteamUser *self, void *ticket, int max_ticket, uint32 *ticket_size, const void *identity);
+int            SteamAPI_ISteamUser_BeginAuthSession(ISteamUser *self, const void *auth_ticket, int ticket_size, uint64_steamid steam_id);
+void           SteamAPI_ISteamUser_EndAuthSession(ISteamUser *self, uint64_steamid steam_id);
+void           SteamAPI_ISteamUser_CancelAuthTicket(ISteamUser *self, HAuthTicket handle);
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);

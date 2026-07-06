@@ -42,6 +42,10 @@ PHP_FUNCTION(steam_run_callbacks);
 PHP_FUNCTION(steam_user_get_steam_id);
 PHP_FUNCTION(steam_user_is_logged_on);
 PHP_FUNCTION(steam_user_get_player_steam_level);
+PHP_FUNCTION(steam_user_get_auth_session_ticket);
+PHP_FUNCTION(steam_user_begin_auth_session);
+PHP_FUNCTION(steam_user_end_auth_session);
+PHP_FUNCTION(steam_user_cancel_auth_ticket);
 
 /* steam_friends.c */
 PHP_FUNCTION(steam_friends_get_name);
