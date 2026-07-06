@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.11.0] - 2026-07-06 (unreleased)
+## [0.11.0] - 2026-07-06
 
 Phase 3 — social, identity, Workshop & networking. All flat signatures, struct
 layouts and callback IDs verified against the real Steamworks SDK 1.64, and the
