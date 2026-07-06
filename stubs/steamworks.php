@@ -100,6 +100,76 @@ function steam_friends_activate_overlay(string $dialog): void {}
  */
 function steam_friends_activate_overlay_to_web_page(string $url, bool $modal = false): void {}
 
+/**
+ * Gibt den eigenen Persona-State zurück (STEAM_PERSONA_STATE_*).
+ *
+ * @return int|false EPersonaState, false wenn Steam nicht initialisiert
+ */
+function steam_friends_get_persona_state(): int|false {}
+
+/**
+ * Anzahl der Freunde, die den angegebenen Flags entsprechen.
+ *
+ * @param int $flags STEAM_FRIEND_FLAG_* (Default: IMMEDIATE = normale Freundesliste)
+ * @return int|false Anzahl, false bei Fehler
+ */
+function steam_friends_get_friend_count(int $flags = STEAM_FRIEND_FLAG_IMMEDIATE): int|false {}
+
+/**
+ * SteamID des Freundes an Position $index (0-basiert).
+ *
+ * @param int $index 0..(get_friend_count()-1)
+ * @param int $flags STEAM_FRIEND_FLAG_* (muss zu get_friend_count() passen)
+ * @return int|false SteamID (64-bit), false bei Fehler
+ */
+function steam_friends_get_friend_by_index(int $index, int $flags = STEAM_FRIEND_FLAG_IMMEDIATE): int|false {}
+
+/**
+ * Beziehung zu einem Nutzer (STEAM_FRIEND_RELATIONSHIP_*).
+ *
+ * @param int $steam_id SteamID
+ * @return int|false EFriendRelationship, false bei Fehler
+ */
+function steam_friends_get_friend_relationship(int $steam_id): int|false {}
+
+/**
+ * Persona-State eines Freundes (STEAM_PERSONA_STATE_*).
+ *
+ * @param int $steam_id SteamID
+ * @return int|false EPersonaState, false bei Fehler
+ */
+function steam_friends_get_friend_persona_state(int $steam_id): int|false {}
+
+/**
+ * Anzeigename eines Freundes/Nutzers.
+ * Nur verlässlich für gecachte Nutzer — sonst vorher request_user_information() aufrufen.
+ *
+ * @param int $steam_id SteamID
+ * @return string|false Name, false bei Fehler
+ */
+function steam_friends_get_friend_persona_name(int $steam_id): string|false {}
+
+/**
+ * Fordert Persona-/Avatar-Infos für einen (noch nicht gecachten) Nutzer an.
+ *
+ * @param int $steam_id SteamID
+ * @param bool $name_only true = nur Name, kein Avatar
+ * @return bool true wenn Daten angefordert werden (noch nicht verfügbar),
+ *              false wenn bereits lokal vorhanden
+ */
+function steam_friends_request_user_information(int $steam_id, bool $name_only = false): bool {}
+
+/**
+ * Avatar eines Nutzers als rohe RGBA8888-Bytes.
+ * Liefert null, wenn kein Avatar gesetzt ist oder er noch nicht geladen wurde
+ * (dann request_user_information() aufrufen und später erneut versuchen).
+ *
+ * @param int $steam_id SteamID
+ * @param int $size STEAM_AVATAR_SMALL (32px) | STEAM_AVATAR_MEDIUM (64px) | STEAM_AVATAR_LARGE (128px)
+ * @return array{width:int, height:int, rgba:string}|null rgba = width*height*4 Bytes
+ */
+function steam_friends_get_friend_avatar(int $steam_id, int $size = STEAM_AVATAR_MEDIUM): ?array {}
+
 /* ── steam_stats.c ── */
 
 /**

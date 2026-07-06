@@ -195,6 +195,17 @@ const char *SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);
 bool        SteamAPI_ISteamFriends_SetRichPresence(ISteamFriends *self, const char *key, const char *value);
 void        SteamAPI_ISteamFriends_ActivateGameOverlay(ISteamFriends *self, const char *dialog);
 void        SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage(ISteamFriends *self, const char *url, int eMode);
+/* Friends list + persona + avatars (EPersonaState/EFriendRelationship are int-sized enums). */
+int         SteamAPI_ISteamFriends_GetPersonaState(ISteamFriends *self);
+int         SteamAPI_ISteamFriends_GetFriendCount(ISteamFriends *self, int friend_flags);
+uint64_steamid SteamAPI_ISteamFriends_GetFriendByIndex(ISteamFriends *self, int index, int friend_flags);
+int         SteamAPI_ISteamFriends_GetFriendRelationship(ISteamFriends *self, uint64_steamid steam_id);
+int         SteamAPI_ISteamFriends_GetFriendPersonaState(ISteamFriends *self, uint64_steamid steam_id);
+const char *SteamAPI_ISteamFriends_GetFriendPersonaName(ISteamFriends *self, uint64_steamid steam_id);
+int         SteamAPI_ISteamFriends_GetSmallFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
+int         SteamAPI_ISteamFriends_GetMediumFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
+int         SteamAPI_ISteamFriends_GetLargeFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
+bool        SteamAPI_ISteamFriends_RequestUserInformation(ISteamFriends *self, uint64_steamid steam_id, bool require_name_only);
 
 /* ── ISteamUserStats ───────────────────────────────────────────────── */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name);
@@ -254,6 +265,8 @@ uint8       SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);
 uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsAPICallCompleted(ISteamUtils *self, SteamAPICall_t call, bool *failed);
 bool        SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t call, void *callback, int callback_size, int callback_expected, bool *failed);
+bool        SteamAPI_ISteamUtils_GetImageSize(ISteamUtils *self, int image, uint32 *width, uint32 *height);
+bool        SteamAPI_ISteamUtils_GetImageRGBA(ISteamUtils *self, int image, uint8 *dest, int dest_size);
 
 /* ── ISteamTimeline (V004) ─────────────────────────────────────────────────
  * Game Recording / Timeline. Accessor version + all signatures verified against

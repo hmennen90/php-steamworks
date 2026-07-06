@@ -48,6 +48,14 @@ PHP_FUNCTION(steam_friends_get_name);
 PHP_FUNCTION(steam_friends_set_rich_presence);
 PHP_FUNCTION(steam_friends_activate_overlay);
 PHP_FUNCTION(steam_friends_activate_overlay_to_web_page);
+PHP_FUNCTION(steam_friends_get_persona_state);
+PHP_FUNCTION(steam_friends_get_friend_count);
+PHP_FUNCTION(steam_friends_get_friend_by_index);
+PHP_FUNCTION(steam_friends_get_friend_relationship);
+PHP_FUNCTION(steam_friends_get_friend_persona_state);
+PHP_FUNCTION(steam_friends_get_friend_persona_name);
+PHP_FUNCTION(steam_friends_request_user_information);
+PHP_FUNCTION(steam_friends_get_friend_avatar);
 
 /* steam_stats.c */
 PHP_FUNCTION(steam_stats_set_achievement);

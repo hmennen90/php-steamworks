@@ -77,6 +77,20 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_two_longs, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, b, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_optional_long, 0, 0, 0)
+    ZEND_ARG_TYPE_INFO(0, flags, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_long, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, a, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, b, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_bool, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, steam_id, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, flag, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
 /* ── ISteamTimeline arginfo ── */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_tl_set_tooltip, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, description, IS_STRING, 0)
@@ -158,6 +172,14 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_friends_set_rich_presence, arginfo_steam_two_strings)
     PHP_FE(steam_friends_activate_overlay,  arginfo_steam_one_string)
     PHP_FE(steam_friends_activate_overlay_to_web_page, arginfo_steam_string_optional_bool)
+    PHP_FE(steam_friends_get_persona_state, arginfo_steam_void)
+    PHP_FE(steam_friends_get_friend_count,  arginfo_steam_optional_long)
+    PHP_FE(steam_friends_get_friend_by_index, arginfo_steam_long_optional_long)
+    PHP_FE(steam_friends_get_friend_relationship, arginfo_steam_one_long)
+    PHP_FE(steam_friends_get_friend_persona_state, arginfo_steam_one_long)
+    PHP_FE(steam_friends_get_friend_persona_name, arginfo_steam_one_long)
+    PHP_FE(steam_friends_request_user_information, arginfo_steam_long_optional_bool)
+    PHP_FE(steam_friends_get_friend_avatar, arginfo_steam_long_optional_long)
 
     /* steam_stats.c */
     PHP_FE(steam_stats_set_achievement,     arginfo_steam_one_string)
@@ -278,6 +300,37 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_NONE",     k_ETimelineEventClipPriority_None,     CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_STANDARD", k_ETimelineEventClipPriority_Standard, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_TIMELINE_CLIP_PRIORITY_FEATURED", k_ETimelineEventClipPriority_Featured, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamFriends: persona state (EPersonaState). */
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_OFFLINE",          0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_ONLINE",           1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_BUSY",             2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_AWAY",             3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_SNOOZE",           4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_LOOKING_TO_TRADE", 5, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_LOOKING_TO_PLAY",  6, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_PERSONA_STATE_INVISIBLE",        7, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamFriends: friend relationship (EFriendRelationship). */
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_NONE",              0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_BLOCKED",           1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_REQUEST_RECIPIENT", 2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_FRIEND",            3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_REQUEST_INITIATOR", 4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_IGNORED",           5, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_RELATIONSHIP_IGNORED_FRIEND",    6, CONST_CS | CONST_PERSISTENT);
+
+    /* ISteamFriends: friend flags for get_friend_count/get_friend_by_index (EFriendFlags). */
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_FLAG_NONE",           0x00,   CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_FLAG_IMMEDIATE",      0x04,   CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_FLAG_CLAN_MEMBER",    0x08,   CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_FLAG_ON_GAME_SERVER", 0x10,   CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_FRIEND_FLAG_ALL",            0xFFFF, CONST_CS | CONST_PERSISTENT);
+
+    /* Avatar sizes for steam_friends_get_friend_avatar(). */
+    REGISTER_LONG_CONSTANT("STEAM_AVATAR_SMALL",  0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_AVATAR_MEDIUM", 1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_AVATAR_LARGE",  2, CONST_CS | CONST_PERSISTENT);
 
     return SUCCESS;
 }

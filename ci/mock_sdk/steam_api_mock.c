@@ -33,6 +33,16 @@ const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self) { return 
 bool        SteamAPI_ISteamFriends_SetRichPresence(ISteamFriends *self, const char *key, const char *value) { return false; }
 void        SteamAPI_ISteamFriends_ActivateGameOverlay(ISteamFriends *self, const char *dialog) { }
 void        SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage(ISteamFriends *self, const char *url, int eMode) { }
+int         SteamAPI_ISteamFriends_GetPersonaState(ISteamFriends *self) { return 1; } /* online */
+int         SteamAPI_ISteamFriends_GetFriendCount(ISteamFriends *self, int friend_flags) { return 2; }
+uint64_steamid SteamAPI_ISteamFriends_GetFriendByIndex(ISteamFriends *self, int index, int friend_flags) { return 76561197960265728ULL + (uint64_steamid)index; }
+int         SteamAPI_ISteamFriends_GetFriendRelationship(ISteamFriends *self, uint64_steamid steam_id) { return 3; } /* friend */
+int         SteamAPI_ISteamFriends_GetFriendPersonaState(ISteamFriends *self, uint64_steamid steam_id) { return 1; }
+const char* SteamAPI_ISteamFriends_GetFriendPersonaName(ISteamFriends *self, uint64_steamid steam_id) { return "MockFriend"; }
+int         SteamAPI_ISteamFriends_GetSmallFriendAvatar(ISteamFriends *self, uint64_steamid steam_id) { return 5; }  /* fake image handle */
+int         SteamAPI_ISteamFriends_GetMediumFriendAvatar(ISteamFriends *self, uint64_steamid steam_id) { return 5; }
+int         SteamAPI_ISteamFriends_GetLargeFriendAvatar(ISteamFriends *self, uint64_steamid steam_id) { return 5; }
+bool        SteamAPI_ISteamFriends_RequestUserInformation(ISteamFriends *self, uint64_steamid steam_id, bool require_name_only) { return false; } /* already available */
 
 /* ISteamUserStats */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name)   { return false; }
@@ -116,6 +126,17 @@ const char* SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self) { return 
 uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self) { return 1609459200; } /* 2021-01-01 */
 uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self) { return 255; }   /* on AC power */
 uint32      SteamAPI_ISteamUtils_GetSecondsSinceAppActive(ISteamUtils *self) { return 0; }
+bool        SteamAPI_ISteamUtils_GetImageSize(ISteamUtils *self, int image, uint32 *width, uint32 *height) {
+    if (image <= 0) { return false; }
+    if (width)  { *width  = 64; }
+    if (height) { *height = 64; }
+    return true;
+}
+bool        SteamAPI_ISteamUtils_GetImageRGBA(ISteamUtils *self, int image, uint8_t *dest, int dest_size) {
+    if (image <= 0 || !dest) { return false; }
+    for (int i = 0; i < dest_size; i++) { dest[i] = 0xFF; } /* opaque white */
+    return true;
+}
 
 /* Async CallResult plumbing — pretend every call completed successfully and
  * hand back a deterministic result struct matching the expected callback id. */
