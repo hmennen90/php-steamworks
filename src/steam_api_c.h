@@ -44,6 +44,13 @@ typedef uint64_t TimelineEventHandle_t;   /* ISteamTimeline event handle */
 typedef uint32_t HAuthTicket;             /* ISteamUser auth ticket handle */
 typedef uint64_t UGCQueryHandle_t;        /* ISteamUGC query handle */
 typedef uint64_t UGCUpdateHandle_t;       /* ISteamUGC item-update handle */
+
+/* Array-of-strings parameter (ISteamUGC::SetItemTags). Plain struct passed by
+   pointer — default alignment matches the SDK (pointer + int32). */
+typedef struct {
+    const char **m_ppStrings;
+    int32        m_nNumStrings;
+} SteamParamStringArray_t;
 typedef uint64_t PublishedFileId_t;       /* Workshop item id */
 typedef uint32_t HSteamNetConnection;     /* ISteamNetworkingSockets connection */
 typedef uint32_t HSteamListenSocket;      /* ISteamNetworkingSockets listen socket */
@@ -418,6 +425,7 @@ bool   SteamAPI_ISteamUGC_SetItemDescription(ISteamUGC *self, UGCUpdateHandle_t 
 bool   SteamAPI_ISteamUGC_SetItemVisibility(ISteamUGC *self, UGCUpdateHandle_t handle, int visibility);
 bool   SteamAPI_ISteamUGC_SetItemContent(ISteamUGC *self, UGCUpdateHandle_t handle, const char *content_folder);
 bool   SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t handle, const char *preview_file);
+bool   SteamAPI_ISteamUGC_SetItemTags(ISteamUGC *self, UGCUpdateHandle_t handle, const SteamParamStringArray_t *tags, bool allow_admin_tags);
 SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note);
 int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
 

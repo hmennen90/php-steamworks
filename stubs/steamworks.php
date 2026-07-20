@@ -938,6 +938,15 @@ function steam_ugc_set_item_content(int $handle, string $content_folder): bool {
 function steam_ugc_set_item_preview(int $handle, string $preview_file): bool {}
 
 /**
+ * Setzt die Tags des Items (Kategorien). Leeres Array löscht alle Tags.
+ *
+ * @param int $handle Update-Handle
+ * @param list<string> $tags Tag-Liste (nur Strings werden übernommen)
+ * @return bool Erfolg
+ */
+function steam_ugc_set_item_tags(int $handle, array $tags): bool {}
+
+/**
  * Reicht das Update ein (async, lädt Inhalt/Preview hoch). Ergebnis über
  * steam_get_call_result() (type "ugc_item_submitted").
  *

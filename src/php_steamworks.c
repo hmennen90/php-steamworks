@@ -110,6 +110,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_string, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_array, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, handle, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, values, IS_ARRAY, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_net_close, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, connection, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, reason, IS_LONG, 0)
@@ -310,6 +315,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_ugc_set_item_visibility,   arginfo_steam_two_longs)
     PHP_FE(steam_ugc_set_item_content,      arginfo_steam_long_string)
     PHP_FE(steam_ugc_set_item_preview,      arginfo_steam_long_string)
+    PHP_FE(steam_ugc_set_item_tags,         arginfo_steam_long_array)
     PHP_FE(steam_ugc_submit_item_update,    arginfo_steam_long_optional_string)
     PHP_FE(steam_ugc_get_item_update_progress, arginfo_steam_one_long)
 

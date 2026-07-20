@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0] - 2026-07-20
+
+ISteamUGC — Workshop item tags. `steam_ugc_set_item_tags($handle, $tags)` sets
+the tag list on a pending item update (marshals a PHP string array into a
+`SteamParamStringArray_t`; an empty array clears all tags). Rounds out the
+publish path so a game can categorise the Workshop items it uploads. Verified
+against Steamworks SDK 1.64 (ISteamUGC V021) and the CI mock SDK.
+
+### Added
+- **ISteamUGC — item tags** (`steam_ugc.c`): `steam_ugc_set_item_tags` (flat
+  `SetItemTags`, `allow_admin_tags = false`). `SteamParamStringArray_t` added to
+  the C header + CI mock; function-registration checks + stubs extended.
+
 ## [0.12.0] - 2026-07-20
 
 ISteamUGC publish path — create, fill and submit Steam Workshop items from PHP,

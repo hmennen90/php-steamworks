@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.12.0"
+#define PHP_STEAMWORKS_VERSION  "0.13.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -172,6 +172,7 @@ PHP_FUNCTION(steam_ugc_set_item_description);
 PHP_FUNCTION(steam_ugc_set_item_visibility);
 PHP_FUNCTION(steam_ugc_set_item_content);
 PHP_FUNCTION(steam_ugc_set_item_preview);
+PHP_FUNCTION(steam_ugc_set_item_tags);
 PHP_FUNCTION(steam_ugc_submit_item_update);
 PHP_FUNCTION(steam_ugc_get_item_update_progress);
 

@@ -421,3 +421,46 @@ PHP_FUNCTION(steam_ugc_get_item_update_progress)
     add_assoc_long(return_value, "bytes_processed", (zend_long)processed);
     add_assoc_long(return_value, "bytes_total", (zend_long)total);
 }
+
+PHP_FUNCTION(steam_ugc_set_item_tags)
+{
+    zend_long handle;
+    zval *arr;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(handle)
+        Z_PARAM_ARRAY(arr)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUGC *ugc = steamworks_ugc();
+    if (!ugc) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    HashTable *ht = Z_ARRVAL_P(arr);
+    uint32 n = zend_hash_num_elements(ht);
+    const char **strings = NULL;
+    int32 count = 0;
+    if (n > 0) {
+        strings = emalloc((size_t)n * sizeof(char *));
+        zval *entry;
+        ZEND_HASH_FOREACH_VAL(ht, entry) {
+            if (Z_TYPE_P(entry) == IS_STRING) {
+                strings[count++] = Z_STRVAL_P(entry);
+            }
+        } ZEND_HASH_FOREACH_END();
+    }
+
+    SteamParamStringArray_t tags;
+    tags.m_ppStrings   = strings;
+    tags.m_nNumStrings = count;
+    /* allow_admin_tags = false: only regular, backend-approved tags. Passing an
+       empty array clears all tags on the item. */
+    bool ok = SteamAPI_ISteamUGC_SetItemTags(ugc, (UGCUpdateHandle_t)handle, &tags, 0);
+
+    if (strings) {
+        efree(strings);
+    }
+    RETURN_BOOL(ok);
+}

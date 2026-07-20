@@ -28,6 +28,11 @@ typedef uint32_t HAuthTicket;
 typedef uint64_t UGCQueryHandle_t;
 typedef uint64_t UGCUpdateHandle_t;
 typedef uint64_t PublishedFileId_t;
+
+typedef struct {
+    const char **m_ppStrings;
+    int32        m_nNumStrings;
+} SteamParamStringArray_t;
 typedef uint32_t HSteamNetConnection;
 typedef uint32_t HSteamListenSocket;
 
