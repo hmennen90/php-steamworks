@@ -243,6 +243,22 @@ PHP_FUNCTION(steam_get_call_result)
                 result.m_bUserNeedsToAcceptWorkshopLegalAgreement != 0);
             return;
         }
+        case STEAMWORKS_CALL_UGC_DELETE_ITEM: {
+            DeleteItemResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_DeleteItemResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read UGC delete item result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "ugc_item_deleted");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;

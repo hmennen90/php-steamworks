@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.0] - 2026-07-20
+
+ISteamUGC — delete a Workshop item. `steam_ugc_delete_item($fileId)` (async →
+`steam_get_call_result` → `ugc_item_deleted`) removes an item the current user
+owns. Permanent — callers should confirm first; hiding via
+`steam_ugc_set_item_visibility` stays the reversible alternative. Struct
+`DeleteItemResult_t` + callback id 3417 verified vs Steamworks SDK 1.64.
+
+### Added
+- **ISteamUGC — delete item** (`steam_ugc.c`): `steam_ugc_delete_item` (flat
+  `DeleteItem`). `DeleteItemResult_t` decoded via `steam_get_call_result`. Mock
+  SDK + CI checks + stubs extended.
+
 ## [0.13.0] - 2026-07-20
 
 ISteamUGC — Workshop item tags. `steam_ugc_set_item_tags($handle, $tags)` sets

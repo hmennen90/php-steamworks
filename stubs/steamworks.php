@@ -947,6 +947,16 @@ function steam_ugc_set_item_preview(int $handle, string $preview_file): bool {}
 function steam_ugc_set_item_tags(int $handle, array $tags): bool {}
 
 /**
+ * Löscht ein eigenes Workshop-Item (async, endgültig). Ergebnis über
+ * steam_get_call_result() (type "ugc_item_deleted"). Reversibler Weg zum
+ * „Entfernen": stattdessen die Sichtbarkeit auf privat/unlisted setzen.
+ *
+ * @param int $file_id PublishedFileId
+ * @return int|false SteamAPICall-Handle, oder false bei Fehler
+ */
+function steam_ugc_delete_item(int $file_id): int|false {}
+
+/**
  * Reicht das Update ein (async, lädt Inhalt/Preview hoch). Ergebnis über
  * steam_get_call_result() (type "ugc_item_submitted").
  *

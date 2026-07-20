@@ -293,6 +293,7 @@ int SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t 
     if (bytes_total) *bytes_total = 0;
     return 0; /* k_EItemUpdateStatusInvalid */
 }
+SteamAPICall_t SteamAPI_ISteamUGC_DeleteItem(ISteamUGC *self, PublishedFileId_t file_id) { return 24; }
 
 /* ISteamNetworkingSockets / Utils — deterministic stubs. Fake handles; no
  * messages delivered (round-trip P2P needs a real relay + peer). */

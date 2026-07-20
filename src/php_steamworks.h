@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.13.0"
+#define PHP_STEAMWORKS_VERSION  "0.14.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -27,6 +27,7 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_UGC_UNSUBSCRIBE,          /* RemoteStorageUnsubscribePublishedFileResult_t */
     STEAMWORKS_CALL_UGC_CREATE_ITEM,          /* CreateItemResult_t */
     STEAMWORKS_CALL_UGC_SUBMIT_ITEM_UPDATE,   /* SubmitItemUpdateResult_t */
+    STEAMWORKS_CALL_UGC_DELETE_ITEM,          /* DeleteItemResult_t */
 };
 
 void steamworks_async_minit(void);
@@ -175,5 +176,6 @@ PHP_FUNCTION(steam_ugc_set_item_preview);
 PHP_FUNCTION(steam_ugc_set_item_tags);
 PHP_FUNCTION(steam_ugc_submit_item_update);
 PHP_FUNCTION(steam_ugc_get_item_update_progress);
+PHP_FUNCTION(steam_ugc_delete_item);
 
 #endif /* PHP_STEAMWORKS_H */

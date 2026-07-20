@@ -133,8 +133,9 @@ enum {
 /* ISteamUGC publish-path CallResult IDs. k_iSteamUGCCallbacks base = 3400
    (verified vs SDK 1.64 steam_api_internal.h / isteamugc.h). */
 enum {
-    k_iCallback_CreateItemResult       = 3400 + 3, /* 3403 */
-    k_iCallback_SubmitItemUpdateResult = 3400 + 4, /* 3404 */
+    k_iCallback_CreateItemResult       = 3400 + 3,  /* 3403 */
+    k_iCallback_SubmitItemUpdateResult = 3400 + 4,  /* 3404 */
+    k_iCallback_DeleteItemResult       = 3400 + 17, /* 3417 */
 };
 
 /* General callback IDs (delivered via RunCallbacks, not CallResults).
@@ -243,6 +244,11 @@ typedef struct {
     uint8_t            m_bUserNeedsToAcceptWorkshopLegalAgreement;
     PublishedFileId_t  m_nPublishedFileId;
 } SubmitItemUpdateResult_t;
+
+typedef struct {
+    int32              m_eResult;          /* EResult (1 = OK) */
+    PublishedFileId_t  m_nPublishedFileId;
+} DeleteItemResult_t;
 
 /* ISteamUser web-api ticket response callback (verified vs SDK 1.64, id 168). */
 typedef struct {
@@ -428,6 +434,7 @@ bool   SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t hand
 bool   SteamAPI_ISteamUGC_SetItemTags(ISteamUGC *self, UGCUpdateHandle_t handle, const SteamParamStringArray_t *tags, bool allow_admin_tags);
 SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note);
 int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
+SteamAPICall_t    SteamAPI_ISteamUGC_DeleteItem(ISteamUGC *self, PublishedFileId_t file_id);
 
 ISteamUGC *SteamAPI_SteamUGC_v021(void);
 

@@ -318,6 +318,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_ugc_set_item_tags,         arginfo_steam_long_array)
     PHP_FE(steam_ugc_submit_item_update,    arginfo_steam_long_optional_string)
     PHP_FE(steam_ugc_get_item_update_progress, arginfo_steam_one_long)
+    PHP_FE(steam_ugc_delete_item,           arginfo_steam_one_long)
 
     /* steam_callback.c / steam_net.c */
     PHP_FE(steam_net_get_connection_events, arginfo_steam_void)

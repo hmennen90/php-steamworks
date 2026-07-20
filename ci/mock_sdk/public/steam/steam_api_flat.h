@@ -277,6 +277,7 @@ bool   SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t hand
 bool   SteamAPI_ISteamUGC_SetItemTags(ISteamUGC *self, UGCUpdateHandle_t handle, const SteamParamStringArray_t *tags, bool allow_admin_tags);
 SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note);
 int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
+SteamAPICall_t    SteamAPI_ISteamUGC_DeleteItem(ISteamUGC *self, PublishedFileId_t file_id);
 
 /* ISteamTimeline */
 void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode);

@@ -464,3 +464,27 @@ PHP_FUNCTION(steam_ugc_set_item_tags)
     }
     RETURN_BOOL(ok);
 }
+
+PHP_FUNCTION(steam_ugc_delete_item)
+{
+    zend_long file_id;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(file_id)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUGC *ugc = steamworks_ugc();
+    if (!ugc) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* Deletes a Workshop item the current user owns (async). Permanent — the UI
+       should confirm first; hiding via SetItemVisibility is the reversible path. */
+    SteamAPICall_t call = SteamAPI_ISteamUGC_DeleteItem(ugc, (PublishedFileId_t)file_id);
+    if (call == 0) {
+        RETURN_FALSE;
+    }
+    steamworks_register_call(call, STEAMWORKS_CALL_UGC_DELETE_ITEM);
+    RETURN_LONG((zend_long)call);
+}
