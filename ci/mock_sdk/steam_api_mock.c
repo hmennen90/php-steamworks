@@ -279,6 +279,19 @@ bool SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t f
     return true;
 }
 bool SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority) { return true; }
+SteamAPICall_t SteamAPI_ISteamUGC_CreateItem(ISteamUGC *self, AppId_t consumer_app_id, int file_type) { return 22; }
+UGCUpdateHandle_t SteamAPI_ISteamUGC_StartItemUpdate(ISteamUGC *self, AppId_t consumer_app_id, PublishedFileId_t file_id) { return 100; }
+bool SteamAPI_ISteamUGC_SetItemTitle(ISteamUGC *self, UGCUpdateHandle_t handle, const char *title) { return true; }
+bool SteamAPI_ISteamUGC_SetItemDescription(ISteamUGC *self, UGCUpdateHandle_t handle, const char *description) { return true; }
+bool SteamAPI_ISteamUGC_SetItemVisibility(ISteamUGC *self, UGCUpdateHandle_t handle, int visibility) { return true; }
+bool SteamAPI_ISteamUGC_SetItemContent(ISteamUGC *self, UGCUpdateHandle_t handle, const char *content_folder) { return true; }
+bool SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t handle, const char *preview_file) { return true; }
+SteamAPICall_t SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note) { return 23; }
+int SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total) {
+    if (bytes_processed) *bytes_processed = 0;
+    if (bytes_total) *bytes_total = 0;
+    return 0; /* k_EItemUpdateStatusInvalid */
+}
 
 /* ISteamNetworkingSockets / Utils — deterministic stubs. Fake handles; no
  * messages delivered (round-trip P2P needs a real relay + peer). */

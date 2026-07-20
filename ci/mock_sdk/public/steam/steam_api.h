@@ -26,6 +26,7 @@ typedef uint64_t UGCHandle_t;
 typedef uint64_t TimelineEventHandle_t;
 typedef uint32_t HAuthTicket;
 typedef uint64_t UGCQueryHandle_t;
+typedef uint64_t UGCUpdateHandle_t;
 typedef uint64_t PublishedFileId_t;
 typedef uint32_t HSteamNetConnection;
 typedef uint32_t HSteamListenSocket;

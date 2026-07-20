@@ -43,6 +43,7 @@ typedef uint64_t UGCHandle_t;
 typedef uint64_t TimelineEventHandle_t;   /* ISteamTimeline event handle */
 typedef uint32_t HAuthTicket;             /* ISteamUser auth ticket handle */
 typedef uint64_t UGCQueryHandle_t;        /* ISteamUGC query handle */
+typedef uint64_t UGCUpdateHandle_t;       /* ISteamUGC item-update handle */
 typedef uint64_t PublishedFileId_t;       /* Workshop item id */
 typedef uint32_t HSteamNetConnection;     /* ISteamNetworkingSockets connection */
 typedef uint32_t HSteamListenSocket;      /* ISteamNetworkingSockets listen socket */
@@ -120,6 +121,13 @@ enum {
 enum {
     k_iCallback_RemoteStorageSubscribePublishedFileResult   = 1300 + 13, /* 1313 */
     k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15, /* 1315 */
+};
+
+/* ISteamUGC publish-path CallResult IDs. k_iSteamUGCCallbacks base = 3400
+   (verified vs SDK 1.64 steam_api_internal.h / isteamugc.h). */
+enum {
+    k_iCallback_CreateItemResult       = 3400 + 3, /* 3403 */
+    k_iCallback_SubmitItemUpdateResult = 3400 + 4, /* 3404 */
 };
 
 /* General callback IDs (delivered via RunCallbacks, not CallResults).
@@ -212,6 +220,22 @@ typedef struct {
     int32              m_eResult;
     PublishedFileId_t  m_nPublishedFileId;
 } RemoteStorageUnsubscribePublishedFileResult_t;
+
+/* ISteamUGC publish-path CallResults. Field order verified vs SDK 1.64
+   (isteamugc.h) — note the bool sits between the two other fields in
+   SubmitItemUpdateResult_t but after them in CreateItemResult_t; the pack(4/8)
+   block above makes the sizes match the SDK on all platforms. */
+typedef struct {
+    int32              m_eResult;          /* EResult (1 = OK) */
+    PublishedFileId_t  m_nPublishedFileId; /* new item id */
+    uint8_t            m_bUserNeedsToAcceptWorkshopLegalAgreement;
+} CreateItemResult_t;
+
+typedef struct {
+    int32              m_eResult;          /* EResult (1 = OK) */
+    uint8_t            m_bUserNeedsToAcceptWorkshopLegalAgreement;
+    PublishedFileId_t  m_nPublishedFileId;
+} SubmitItemUpdateResult_t;
 
 /* ISteamUser web-api ticket response callback (verified vs SDK 1.64, id 168). */
 typedef struct {
@@ -379,6 +403,23 @@ uint32 SteamAPI_ISteamUGC_GetItemState(ISteamUGC *self, PublishedFileId_t file_i
 bool   SteamAPI_ISteamUGC_GetItemInstallInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *size_on_disk, char *folder, uint32 folder_size, uint32 *timestamp);
 bool   SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *bytes_downloaded, uint64_t *bytes_total);
 bool   SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority);
+
+/* ── ISteamUGC (Workshop, V021) — publish path ─────────────────────────────
+ * Create a new item, open an update handle, set metadata/content/preview, then
+ * submit. CreateItem + SubmitItemUpdate are async (SteamAPICall_t → poll
+ * steam_get_call_result); StartItemUpdate + the SetItem* setters are synchronous.
+ * Enum params (EWorkshopFileType, ERemoteStoragePublishedFileVisibility) and the
+ * EItemUpdateStatus return are int-sized at the ABI, passed/returned as int.
+ * Verified against Steamworks SDK 1.64 (ISteamUGC V021 flat API). */
+SteamAPICall_t    SteamAPI_ISteamUGC_CreateItem(ISteamUGC *self, AppId_t consumer_app_id, int file_type);
+UGCUpdateHandle_t SteamAPI_ISteamUGC_StartItemUpdate(ISteamUGC *self, AppId_t consumer_app_id, PublishedFileId_t file_id);
+bool   SteamAPI_ISteamUGC_SetItemTitle(ISteamUGC *self, UGCUpdateHandle_t handle, const char *title);
+bool   SteamAPI_ISteamUGC_SetItemDescription(ISteamUGC *self, UGCUpdateHandle_t handle, const char *description);
+bool   SteamAPI_ISteamUGC_SetItemVisibility(ISteamUGC *self, UGCUpdateHandle_t handle, int visibility);
+bool   SteamAPI_ISteamUGC_SetItemContent(ISteamUGC *self, UGCUpdateHandle_t handle, const char *content_folder);
+bool   SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t handle, const char *preview_file);
+SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note);
+int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
 
 ISteamUGC *SteamAPI_SteamUGC_v021(void);
 

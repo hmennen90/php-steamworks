@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.12.0] - 2026-07-20
+
+ISteamUGC publish path — create, fill and submit Steam Workshop items from PHP,
+so a game can upload mods/content itself instead of relying on external tooling
+(steamcmd). Flat signatures, struct layouts (CreateItemResult_t /
+SubmitItemUpdateResult_t) and callback IDs (3403 / 3404) verified against the
+real Steamworks SDK 1.64 (ISteamUGC V021); the whole surface compiles against
+the CI mock SDK and loads on a real ZTS build.
+
+### Added
+- **ISteamUGC — publish path** (`steam_ugc.c`): `steam_ugc_create_item`
+  (async → new PublishedFileId), `steam_ugc_start_item_update` (returns an
+  update handle), the synchronous setters `steam_ugc_set_item_title` /
+  `_description` / `_content` / `_preview` / `_visibility`,
+  `steam_ugc_submit_item_update` (async), and `steam_ugc_get_item_update_progress`
+  (byte progress + status). CreateItem/SubmitItemUpdate results decode through
+  `steam_get_call_result` (`ugc_item_created` / `ugc_item_submitted`).
+- **Constants**: `STEAM_UGC_FILE_TYPE_COMMUNITY`,
+  `STEAM_UGC_VISIBILITY_*` (PUBLIC/FRIENDS_ONLY/PRIVATE/UNLISTED),
+  `STEAM_UGC_UPDATE_STATUS_*` (INVALID/PREPARING_CONFIG/PREPARING_CONTENT/
+  UPLOADING_CONTENT/UPLOADING_PREVIEW/COMMITTING).
+- CI mock SDK + function-registration checks extended to cover the new symbols.
+
 ## [0.11.0] - 2026-07-06
 
 Phase 3 — social, identity, Workshop & networking. All flat signatures, struct

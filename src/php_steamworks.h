@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.11.0"
+#define PHP_STEAMWORKS_VERSION  "0.12.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -25,6 +25,8 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_TIMELINE_PHASE_RECORDING, /* SteamTimelineGamePhaseRecordingExists_t */
     STEAMWORKS_CALL_UGC_SUBSCRIBE,            /* RemoteStorageSubscribePublishedFileResult_t */
     STEAMWORKS_CALL_UGC_UNSUBSCRIBE,          /* RemoteStorageUnsubscribePublishedFileResult_t */
+    STEAMWORKS_CALL_UGC_CREATE_ITEM,          /* CreateItemResult_t */
+    STEAMWORKS_CALL_UGC_SUBMIT_ITEM_UPDATE,   /* SubmitItemUpdateResult_t */
 };
 
 void steamworks_async_minit(void);
@@ -162,5 +164,15 @@ PHP_FUNCTION(steam_ugc_get_item_state);
 PHP_FUNCTION(steam_ugc_get_item_install_info);
 PHP_FUNCTION(steam_ugc_get_item_download_info);
 PHP_FUNCTION(steam_ugc_download_item);
+/* UGC publish path */
+PHP_FUNCTION(steam_ugc_create_item);
+PHP_FUNCTION(steam_ugc_start_item_update);
+PHP_FUNCTION(steam_ugc_set_item_title);
+PHP_FUNCTION(steam_ugc_set_item_description);
+PHP_FUNCTION(steam_ugc_set_item_visibility);
+PHP_FUNCTION(steam_ugc_set_item_content);
+PHP_FUNCTION(steam_ugc_set_item_preview);
+PHP_FUNCTION(steam_ugc_submit_item_update);
+PHP_FUNCTION(steam_ugc_get_item_update_progress);
 
 #endif /* PHP_STEAMWORKS_H */

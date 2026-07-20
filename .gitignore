@@ -53,3 +53,10 @@ Thumbs.db
 
 # Test artifacts
 steam_appid.txt
+
+# Windows phpize/nmake build artifacts (local)
+/x64/
+configure.js
+configure.bat
+config.nice.bat
+build_here.bat

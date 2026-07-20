@@ -12,6 +12,19 @@ const STEAM_LEADERBOARD_UPLOAD_KEEP_BEST = 1;
 const STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE = 2;
 const STEAM_LEADERBOARD_DATA_GLOBAL = 0;
 const STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER = 1;
+
+/* ── UGC publish path (steam_ugc_create_item / set_item_visibility / progress) ── */
+const STEAM_UGC_FILE_TYPE_COMMUNITY = 0;
+const STEAM_UGC_VISIBILITY_PUBLIC = 0;
+const STEAM_UGC_VISIBILITY_FRIENDS_ONLY = 1;
+const STEAM_UGC_VISIBILITY_PRIVATE = 2;
+const STEAM_UGC_VISIBILITY_UNLISTED = 3;
+const STEAM_UGC_UPDATE_STATUS_INVALID = 0;
+const STEAM_UGC_UPDATE_STATUS_PREPARING_CONFIG = 1;
+const STEAM_UGC_UPDATE_STATUS_PREPARING_CONTENT = 2;
+const STEAM_UGC_UPDATE_STATUS_UPLOADING_CONTENT = 3;
+const STEAM_UGC_UPDATE_STATUS_UPLOADING_PREVIEW = 4;
+const STEAM_UGC_UPDATE_STATUS_COMMITTING = 5;
 const STEAM_LEADERBOARD_DATA_FRIENDS = 2;
 
 /* ── steam_init.c ── */
@@ -875,6 +888,72 @@ function steam_ugc_get_item_download_info(int $file_id): array|false {}
  * @return bool true wenn der Download gestartet wurde
  */
 function steam_ugc_download_item(int $file_id, bool $high_priority = false): bool {}
+
+/* ── UGC publish path — create/fill/submit a Workshop item ──
+ *
+ * $call = steam_ugc_create_item($appId);            // async
+ * // poll steam_get_call_result($call) -> ['success'=>bool,'file_id'=>int,...]
+ * $h = steam_ugc_start_item_update($appId, $fileId);
+ * steam_ugc_set_item_title($h, 'Title');
+ * steam_ugc_set_item_description($h, '...');
+ * steam_ugc_set_item_content($h, 'C:\\abs\\path\\to\\mod');   // absolute path
+ * steam_ugc_set_item_preview($h, 'C:\\abs\\path\\preview.png');
+ * steam_ugc_set_item_visibility($h, STEAM_UGC_VISIBILITY_PUBLIC);
+ * $call = steam_ugc_submit_item_update($h, 'change note');   // async
+ * // poll steam_get_call_result($call); meanwhile steam_ugc_get_item_update_progress($h)
+ */
+
+/**
+ * Legt ein neues Workshop-Item an (async). Ergebnis über
+ * steam_get_call_result() abholen (type "ugc_item_created", liefert file_id).
+ *
+ * @param int $app_id Consumer-AppID
+ * @param int $file_type STEAM_UGC_FILE_TYPE_COMMUNITY
+ * @return int|false SteamAPICall-Handle, oder false bei Fehler
+ */
+function steam_ugc_create_item(int $app_id, int $file_type = STEAM_UGC_FILE_TYPE_COMMUNITY): int|false {}
+
+/**
+ * Öffnet ein Update-Handle für ein (neues oder bestehendes) Item.
+ *
+ * @param int $app_id Consumer-AppID
+ * @param int $file_id PublishedFileId
+ * @return int Update-Handle (round-trips wie ein Call-Handle; -1 = ungültig)
+ */
+function steam_ugc_start_item_update(int $app_id, int $file_id): int {}
+
+/** Setzt den Titel des Items. @return bool Erfolg */
+function steam_ugc_set_item_title(int $handle, string $title): bool {}
+
+/** Setzt die Beschreibung des Items. @return bool Erfolg */
+function steam_ugc_set_item_description(int $handle, string $description): bool {}
+
+/** Setzt die Sichtbarkeit (STEAM_UGC_VISIBILITY_*). @return bool Erfolg */
+function steam_ugc_set_item_visibility(int $handle, int $visibility): bool {}
+
+/** Absoluter Pfad zum Inhaltsordner des Items. @return bool Erfolg */
+function steam_ugc_set_item_content(int $handle, string $content_folder): bool {}
+
+/** Absoluter Pfad zum Vorschaubild (< 1 MB, jpg/png/gif). @return bool Erfolg */
+function steam_ugc_set_item_preview(int $handle, string $preview_file): bool {}
+
+/**
+ * Reicht das Update ein (async, lädt Inhalt/Preview hoch). Ergebnis über
+ * steam_get_call_result() (type "ugc_item_submitted").
+ *
+ * @param int $handle Update-Handle aus steam_ugc_start_item_update()
+ * @param string|null $change_note Änderungsnotiz (optional)
+ * @return int|false SteamAPICall-Handle, oder false bei Fehler
+ */
+function steam_ugc_submit_item_update(int $handle, ?string $change_note = null): int|false {}
+
+/**
+ * Fortschritt eines laufenden Item-Updates.
+ *
+ * @param int $handle Update-Handle
+ * @return array{status:int,bytes_processed:int,bytes_total:int} status = STEAM_UGC_UPDATE_STATUS_*
+ */
+function steam_ugc_get_item_update_progress(int $handle): array {}
 
 /* ── steam_net.c (ISteamNetworkingSockets / P2P) + steam_callback.c ──
  *

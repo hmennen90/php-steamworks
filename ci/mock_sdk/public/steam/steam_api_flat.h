@@ -267,6 +267,15 @@ uint32 SteamAPI_ISteamUGC_GetItemState(ISteamUGC *self, PublishedFileId_t file_i
 bool   SteamAPI_ISteamUGC_GetItemInstallInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *size_on_disk, char *folder, uint32 folder_size, uint32 *timestamp);
 bool   SteamAPI_ISteamUGC_GetItemDownloadInfo(ISteamUGC *self, PublishedFileId_t file_id, uint64_t *bytes_downloaded, uint64_t *bytes_total);
 bool   SteamAPI_ISteamUGC_DownloadItem(ISteamUGC *self, PublishedFileId_t file_id, bool high_priority);
+SteamAPICall_t    SteamAPI_ISteamUGC_CreateItem(ISteamUGC *self, AppId_t consumer_app_id, int file_type);
+UGCUpdateHandle_t SteamAPI_ISteamUGC_StartItemUpdate(ISteamUGC *self, AppId_t consumer_app_id, PublishedFileId_t file_id);
+bool   SteamAPI_ISteamUGC_SetItemTitle(ISteamUGC *self, UGCUpdateHandle_t handle, const char *title);
+bool   SteamAPI_ISteamUGC_SetItemDescription(ISteamUGC *self, UGCUpdateHandle_t handle, const char *description);
+bool   SteamAPI_ISteamUGC_SetItemVisibility(ISteamUGC *self, UGCUpdateHandle_t handle, int visibility);
+bool   SteamAPI_ISteamUGC_SetItemContent(ISteamUGC *self, UGCUpdateHandle_t handle, const char *content_folder);
+bool   SteamAPI_ISteamUGC_SetItemPreview(ISteamUGC *self, UGCUpdateHandle_t handle, const char *preview_file);
+SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdateHandle_t handle, const char *change_note);
+int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
 
 /* ISteamTimeline */
 void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode);

@@ -100,6 +100,16 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_optional_string, 0, 0, 0)
     ZEND_ARG_TYPE_INFO(0, identity, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_string, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, handle, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_string, 0, 0, 1)
+    ZEND_ARG_TYPE_INFO(0, handle, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 1)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_net_close, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, connection, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, reason, IS_LONG, 0)
@@ -292,6 +302,16 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_ugc_get_item_install_info, arginfo_steam_one_long)
     PHP_FE(steam_ugc_get_item_download_info, arginfo_steam_one_long)
     PHP_FE(steam_ugc_download_item,         arginfo_steam_long_optional_bool)
+    /* UGC publish path */
+    PHP_FE(steam_ugc_create_item,           arginfo_steam_long_optional_long)
+    PHP_FE(steam_ugc_start_item_update,     arginfo_steam_two_longs)
+    PHP_FE(steam_ugc_set_item_title,        arginfo_steam_long_string)
+    PHP_FE(steam_ugc_set_item_description,  arginfo_steam_long_string)
+    PHP_FE(steam_ugc_set_item_visibility,   arginfo_steam_two_longs)
+    PHP_FE(steam_ugc_set_item_content,      arginfo_steam_long_string)
+    PHP_FE(steam_ugc_set_item_preview,      arginfo_steam_long_string)
+    PHP_FE(steam_ugc_submit_item_update,    arginfo_steam_long_optional_string)
+    PHP_FE(steam_ugc_get_item_update_progress, arginfo_steam_one_long)
 
     /* steam_callback.c / steam_net.c */
     PHP_FE(steam_net_get_connection_events, arginfo_steam_void)
@@ -398,6 +418,23 @@ PHP_MINIT_FUNCTION(steamworks)
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOADING",      16, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DOWNLOAD_PENDING", 32, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("STEAM_UGC_ITEM_STATE_DISABLED_LOCALLY", 64, CONST_CS | CONST_PERSISTENT);
+
+    /* UGC publish path: workshop file type (steam_ugc_create_item). */
+    REGISTER_LONG_CONSTANT("STEAM_UGC_FILE_TYPE_COMMUNITY", 0, CONST_CS | CONST_PERSISTENT);
+
+    /* UGC item visibility (steam_ugc_set_item_visibility). */
+    REGISTER_LONG_CONSTANT("STEAM_UGC_VISIBILITY_PUBLIC",       0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_VISIBILITY_FRIENDS_ONLY", 1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_VISIBILITY_PRIVATE",      2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_VISIBILITY_UNLISTED",     3, CONST_CS | CONST_PERSISTENT);
+
+    /* UGC item update status (steam_ugc_get_item_update_progress → "status"). */
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_INVALID",          0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_PREPARING_CONFIG", 1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_PREPARING_CONTENT",2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_UPLOADING_CONTENT",3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_UPLOADING_PREVIEW",4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_UGC_UPDATE_STATUS_COMMITTING",       5, CONST_CS | CONST_PERSISTENT);
 
     /* ISteamNetworkingSockets: connection state (ESteamNetworkingConnectionState). */
     REGISTER_LONG_CONSTANT("STEAM_NET_CONNECTION_STATE_NONE",                     0, CONST_CS | CONST_PERSISTENT);

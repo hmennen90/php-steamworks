@@ -207,6 +207,42 @@ PHP_FUNCTION(steam_get_call_result)
             add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
             return;
         }
+        case STEAMWORKS_CALL_UGC_CREATE_ITEM: {
+            CreateItemResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_CreateItemResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read UGC create item result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "ugc_item_created");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
+            add_assoc_bool(return_value, "needs_legal_agreement",
+                result.m_bUserNeedsToAcceptWorkshopLegalAgreement != 0);
+            return;
+        }
+        case STEAMWORKS_CALL_UGC_SUBMIT_ITEM_UPDATE: {
+            SubmitItemUpdateResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_SubmitItemUpdateResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read UGC submit item update result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "ugc_item_submitted");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
+            add_assoc_bool(return_value, "needs_legal_agreement",
+                result.m_bUserNeedsToAcceptWorkshopLegalAgreement != 0);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;
