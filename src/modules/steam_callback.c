@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 #include <string.h>
 
 /* ── General callback dispatch (not CallResults) ────────────────────────────
@@ -215,7 +215,7 @@ PHP_FUNCTION(steam_user_get_auth_ticket_for_web_api)
         Z_PARAM_STR_OR_NULL(identity)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

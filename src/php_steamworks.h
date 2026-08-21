@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.14.0"
+#define PHP_STEAMWORKS_VERSION  "0.15.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -131,6 +131,9 @@ PHP_FUNCTION(steam_utils_get_app_id);
 PHP_FUNCTION(steam_utils_is_overlay_enabled);
 PHP_FUNCTION(steam_utils_get_country_code);
 PHP_FUNCTION(steam_utils_is_steam_deck);
+PHP_FUNCTION(steam_utils_get_hardware_type);
+PHP_FUNCTION(steam_utils_get_hardware_default_config);
+PHP_FUNCTION(steam_utils_is_running_under_proton);
 PHP_FUNCTION(steam_utils_get_steam_ui_language);
 PHP_FUNCTION(steam_utils_get_server_real_time);
 PHP_FUNCTION(steam_utils_get_current_battery_power);

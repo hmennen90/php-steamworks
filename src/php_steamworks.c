@@ -273,6 +273,9 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_utils_is_overlay_enabled,  arginfo_steam_void)
     PHP_FE(steam_utils_get_country_code,    arginfo_steam_void)
     PHP_FE(steam_utils_is_steam_deck,       arginfo_steam_void)
+    PHP_FE(steam_utils_get_hardware_type,   arginfo_steam_void)
+    PHP_FE(steam_utils_get_hardware_default_config, arginfo_steam_void)
+    PHP_FE(steam_utils_is_running_under_proton,     arginfo_steam_void)
     PHP_FE(steam_utils_get_steam_ui_language, arginfo_steam_void)
     PHP_FE(steam_utils_get_server_real_time, arginfo_steam_void)
     PHP_FE(steam_utils_get_current_battery_power, arginfo_steam_void)
@@ -345,6 +348,22 @@ PHP_MINIT_FUNCTION(steamworks)
 {
     steamworks_async_minit();
     steamworks_callbacks_minit();
+
+    /* Steam hardware constants (mirror ESteamHardwareType in the SDK, 1.65+). */
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_TYPE_NONE",          0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_TYPE_STEAM_DECK",    1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_TYPE_STEAM_MACHINE", 2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_TYPE_STEAM_FRAME",   3, CONST_CS | CONST_PERSISTENT);
+
+    /* Suggested settings preset (mirror ESteamHardwareDefaultConfig, 1.65+). */
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_NONE",          0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_LOW",           1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_MEDIUM",        2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_HIGH",          3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_MAX",           4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_STEAM_DECK",    5, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_STEAM_MACHINE", 6, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_HARDWARE_CONFIG_STEAM_FRAME",   7, CONST_CS | CONST_PERSISTENT);
 
     /* Leaderboard enum constants (mirror ELeaderboard* in the SDK). */
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_SORT_ASCENDING",  1, CONST_CS | CONST_PERSISTENT);

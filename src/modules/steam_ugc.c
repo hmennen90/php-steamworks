@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 /* ── ISteamUGC (Steam Workshop) — consume path ─────────────────────────────
  *
@@ -18,10 +18,6 @@
  * Verified against Steamworks SDK 1.64 (ISteamUGC V021).
  */
 
-static ISteamUGC *steamworks_ugc(void)
-{
-    return SteamAPI_SteamUGC_v021();
-}
 
 PHP_FUNCTION(steam_ugc_subscribe_item)
 {

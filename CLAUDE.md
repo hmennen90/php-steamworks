@@ -15,7 +15,7 @@ Projekten verwendet werden.
 **Sprachen:** C (Extension), PHP (Tests, Beispiele, Stubs)
 **Zielplattformen:** macOS (arm64, x86_64), Linux (x86_64), Windows (x86_64)
 **PHP-Mindestversion:** 8.1
-**Steamworks SDK:** 1.58+ (muss vom Nutzer selbst bereitgestellt werden)
+**Steamworks SDK:** 1.65 (Runtime-Libs liegen im Repo, Header stellt der Nutzer bereit)
 
 ---
 
@@ -26,6 +26,9 @@ php-steamworks/
 ├── src/
 │   ├── php_steamworks.c        ← Haupt-Extension-Datei, alle PHP_FUNCTION-Definitionen
 │   ├── php_steamworks.h        ← Header: Makros, Funktions-Deklarationen, Structs
+│   ├── steam_api_c.h           ← C-taugliche Deklarationen der flachen Steam-API
+│   ├── steam_iface.h           ← Interface-Accessoren (steamworks_utils() etc.)
+│   ├── steam_iface.c           ← Laufzeit-Auflösung der Interface-Versionen
 │   ├── modules/
 │   │   ├── steam_init.c        ← SteamAPI_Init, SteamAPI_Shutdown, RunCallbacks
 │   │   ├── steam_user.c        ← ISteamUser: SteamID, Auth Tickets
@@ -72,19 +75,63 @@ Die Steamworks SDK stellt neben der C++ OOP-API eine flache C-API bereit
 C++-Klassen (`ISteamFriends*` etc.) in Zend-API-Code einbetten.
 
 ```c
-// RICHTIG — flache C-API
-SteamAPI_ISteamFriends_GetPersonaName(SteamAPI_SteamFriends_v017());
+// RICHTIG — flache C-API (Interface über steam_iface.h, siehe Prinzip 2)
+SteamAPI_ISteamFriends_GetPersonaName(steamworks_friends());
 
 // FALSCH — C++ direkt
 SteamFriends()->GetPersonaName();
 ```
 
-### 2. Jede Steamworks-Schnittstelle = ein Modul
+### 2. Interfaces zur Laufzeit auflösen, nie über versionierte Accessoren
+
+Die SDK bietet pro Interface einen versionierten Accessor
+(`SteamAPI_SteamUtils_v011()`). Das ist ein **Link-Zeit-Symbol** — jede SDK, die
+ein Interface hochzählt, zerbricht damit den Build. SDK 1.65 hat genau so
+`SteamAPI_SteamUtils_v010` entfernt.
+
+Deshalb: **niemals `SteamAPI_Steam*_vNNN()` aufrufen.** Stattdessen die
+Accessoren aus `steam_iface.h` verwenden, die die Version zur Laufzeit als
+String auflösen.
+
+```c
+// RICHTIG
+ISteamUtils *utils = steamworks_utils();
+
+// FALSCH — bricht beim nächsten SDK-Versionssprung
+ISteamUtils *utils = SteamAPI_SteamUtils_v011();
+```
+
+Die Versionstabellen stehen in `src/steam_iface.c`, neueste Version zuerst.
+
+**Versionsstrings sind nicht ableitbar.** `ISteamApps` heißt
+`"STEAMAPPS_INTERFACE_VERSION009"`, nicht `"SteamApps009"`. Immer aus dem
+`*_INTERFACE_VERSION`-Define des SDK-Headers kopieren, nie raten — ein falscher
+String löst das Interface still nicht auf, und die Funktion gibt denselben
+`false`-Wert zurück wie bei „Steam läuft nicht".
+
+**Legacy-Fallbacks nur bei identischem vtable-Layout.** Einträge nach dem ersten
+sind veraltete Versionen, die weiter funktionieren und einmalig pro Prozess
+`E_DEPRECATED` auslösen. Das ist aber nur zulässig, wenn das alte Interface
+dieselbe vtable-Reihenfolge hat: die flachen `SteamAPI_ISteamX_*`-Funktionen in
+`libsteam_api` sind gegen die **aktuelle** Version kompiliert und rufen feste
+Slots auf. Methoden am Ende anhängen ist unkritisch, Entfernen oder Umsortieren
+nicht. Vor dem Eintragen prüfen:
+
+```bash
+diff <(grep -oE 'virtual [^(]+\(' alt/isteamfoo.h) \
+     <(grep -oE 'virtual [^(]+\(' neu/isteamfoo.h)
+```
+
+`ISteamUtils` hat deshalb **keinen** Fallback: SDK 1.65 hat zwei Methoden aus der
+Mitte entfernt. `ISteamNetworkingSockets012` → `013` ist layout-identisch und
+daher sicher.
+
+### 3. Jede Steamworks-Schnittstelle = ein Modul
 
 Jedes `steam_*.c`-Modul kapselt genau eine Steamworks-Schnittstelle.
 `php_steamworks.c` registriert alle Funktionen aus allen Modulen.
 
-### 3. Fehlerbehandlung über PHP Warnings + bool Returns
+### 4. Fehlerbehandlung über PHP Warnings + bool Returns
 
 Steam-Funktionen die fehlschlagen, geben `false` zurück und setzen ein
 PHP-Warning mit `php_error_docref`. Keine Exceptions aus der Extension heraus.
@@ -97,7 +144,7 @@ if (!SteamAPI_Init()) {
 RETURN_TRUE;
 ```
 
-### 4. String-Ownership explizit behandeln
+### 5. String-Ownership explizit behandeln
 
 Steam gibt `const char*` zurück, die intern verwaltet werden. Immer mit
 `RETURN_STRING()` kopieren, nie direkt übergeben.
@@ -111,7 +158,7 @@ RETURN_STRING(name);  // Zend Engine kopiert den String
 RETURN_STRINGL(name, strlen(name), 0);  // ownership-Problem
 ```
 
-### 5. Callbacks sind Pull, nicht Push
+### 6. Callbacks sind Pull, nicht Push
 
 Steam Callbacks werden über `SteamAPI_RunCallbacks()` verarbeitet, das
 **jeden Frame** aus dem PHP Game Loop aufgerufen werden muss. Kein
@@ -317,6 +364,7 @@ if test "$PHP_STEAMWORKS" != "no"; then
   PHP_SUBST(STEAMWORKS_SHARED_LIBADD)
   PHP_NEW_EXTENSION(steamworks,
     src/php_steamworks.c \
+    src/steam_iface.c \
     src/modules/steam_init.c \
     src/modules/steam_user.c \
     src/modules/steam_friends.c \
@@ -406,7 +454,43 @@ class SteamInitTest extends PHPUnit\Framework\TestCase {
 
 ---
 
+## SDK-Upgrade
+
+1. Interface-Versionsstrings beider SDKs vergleichen:
+   ```bash
+   grep -rhoE '#define STEAM[A-Z_]*_INTERFACE_VERSION[ \t]+"[A-Za-z0-9_]+"' <sdk>/public/steam/*.h | sort -u
+   ```
+2. Für jede geänderte Version die Tabelle in `src/steam_iface.c` anpassen.
+   Alte Version nur dann als Fallback stehen lassen, wenn die vtable-Reihenfolge
+   identisch ist (siehe Architekturprinzip 2) — sonst ersatzlos streichen.
+3. `mock_offered[]` / `mock_legacy[]` in `ci/mock_sdk/steam_api_mock.c` nachziehen
+   und `EXPECTED_VERSIONS` / `LEGACY_VERSIONS` in `tests/SteamInterfaceTest.php`.
+4. Genutzte Symbole gegen die neue SDK prüfen — entfernte Symbole finden:
+   ```bash
+   grep -oE "SteamAPI_[A-Za-z0-9_]+" src/steam_api_c.h | sort -u | while read s; do
+     grep -q "\b$s\b" <sdk>/public/steam/steam_api_flat.h || echo "fehlt: $s"
+   done
+   ```
+5. `sdk/redistributable_bin/**` durch die neuen Runtime-Libs ersetzen.
+6. Verifizieren: `STEAMWORKS_SDK_DIR=<sdk> phpunit --filter testVersionStringsMatchARealSdk`
+   und gegen die echte SDK bauen.
+7. README („SDK compatibility"), INSTALL.md, CHANGELOG und `steamworks-docs-keeper` laufen lassen.
+
 ## Wichtige Einschränkungen (nie vergessen)
+
+- **Clean-Targets zerstören getrackte Dateien:**
+  - `make clean` löscht rekursiv **alle** `*.so` im Baum — also auch die
+    ausgelieferten Runtime-Libraries unter
+    `sdk/redistributable_bin/{linux32,linux64,linuxarm64,androidarm64}/`.
+  - `phpize --clean` löscht zusätzlich das `tests/`-Verzeichnis.
+
+  Stattdessen Objekte gezielt entfernen:
+  `find src ci -name '*.lo' -delete && rm -rf src/.libs src/modules/.libs ci/mock_sdk/.libs modules`
+  Nach jedem Clean `git status` prüfen.
+- **`config.m4` geändert? → `phpize` erneut ausführen.** `./configure` allein
+  regeneriert das Makefile nicht, die neue Quelldatei wird still nicht gebaut.
+  Auf macOS fällt das nicht beim Linken auf (`-undefined suppress`), sondern
+  erst als SIGSEGV zur Laufzeit.
 
 - **`sdk/`-Ordner gehört nicht ins Repo.** `.gitignore` enthält `sdk/` komplett.
   Die Steamworks SDK darf nicht redistribuiert werden (Valve-Lizenz).
@@ -464,3 +548,7 @@ interface PlatformInterface {
 9. **CI-Funktionsliste aktualisieren** — Neue Funktion in die `$functions`-Arrays
    in `.github/workflows/ci.yml` eintragen (Unix- und Windows-Job)
 10. Eintrag in `CHANGELOG.md`
+11. **`steamworks-docs-keeper`-Agent laufen lassen** — prüft Stubs, README-
+    Funktionsliste, beide CI-Arrays, Mock SDK, SDK-Version und Build-Config auf
+    Drift. Doku-Drift ist hier still: kein Build und kein Test schlägt fehl,
+    wenn ein Stub oder ein README-Eintrag fehlt.

@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 #include <string.h>
 
 /* ── ISteamNetworkingSockets — P2P messaging core ──────────────────────────
@@ -13,16 +13,12 @@
  * Verified against Steamworks SDK 1.64 (SteamNetworkingSockets_v012).
  */
 
-static ISteamNetworkingSockets *steamworks_net(void)
-{
-    return SteamAPI_SteamNetworkingSockets_SteamAPI_v012();
-}
 
 PHP_FUNCTION(steam_net_init_relay_network_access)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamNetworkingUtils *utils = SteamAPI_SteamNetworkingUtils_SteamAPI_v004();
+    ISteamNetworkingUtils *utils = steamworks_net_utils();
     if (!utils) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

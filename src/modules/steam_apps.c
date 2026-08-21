@@ -1,11 +1,11 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 PHP_FUNCTION(steam_apps_is_subscribed)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -22,7 +22,7 @@ PHP_FUNCTION(steam_apps_is_dlc_installed)
         Z_PARAM_LONG(dlc_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -35,7 +35,7 @@ PHP_FUNCTION(steam_apps_get_app_id)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -48,7 +48,7 @@ PHP_FUNCTION(steam_apps_get_language)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -66,7 +66,7 @@ PHP_FUNCTION(steam_apps_is_subscribed_app)
         Z_PARAM_LONG(app_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -79,7 +79,7 @@ PHP_FUNCTION(steam_apps_get_current_beta_name)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -102,7 +102,7 @@ PHP_FUNCTION(steam_apps_get_earliest_purchase_time)
         Z_PARAM_LONG(app_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -119,7 +119,7 @@ PHP_FUNCTION(steam_apps_get_installed_depots)
         Z_PARAM_LONG(app_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -139,7 +139,7 @@ PHP_FUNCTION(steam_apps_get_dlc_count)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -152,7 +152,7 @@ PHP_FUNCTION(steam_apps_get_app_build_id)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamApps *apps = SteamAPI_SteamApps_v009();
+    ISteamApps *apps = steamworks_apps();
     if (!apps) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

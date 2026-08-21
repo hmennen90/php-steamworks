@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.15.0] - 2026-08-21
+
+### Added
+- ISteamUtils: `steam_utils_get_hardware_type()` — which Steam hardware the
+  process runs on (`STEAM_HARDWARE_TYPE_*`)
+- ISteamUtils: `steam_utils_get_hardware_default_config()` — suggested settings
+  preset for the current device (`STEAM_HARDWARE_CONFIG_*`), retargetable by
+  Valve per device without recompiling
+- ISteamUtils: `steam_utils_is_running_under_proton()`
+- Constants: `STEAM_HARDWARE_TYPE_*`, `STEAM_HARDWARE_CONFIG_*`
+
+### Changed
+- Updated to Steamworks SDK 1.65, which is now the minimum;
+  `sdk/redistributable_bin/` ships the 1.65 runtime libraries
+- `ISteamUtils` bumped to `SteamUtils011`, `ISteamNetworkingSockets` to
+  `SteamNetworkingSockets013`
+- Steam interfaces are now resolved by version string at runtime via
+  `SteamInternal_FindOrCreateUserInterface()` instead of the versioned
+  `SteamAPI_Steam*_vNNN()` accessor symbols. Those are version-locked link-time
+  symbols — SDK 1.65 removed `SteamAPI_SteamUtils_v010` and broke the build
+  outright. An interface bump is now a one-line table change.
+
+### Deprecated
+- `steam_utils_is_steam_deck()` — SDK 1.65 removed the underlying
+  `IsRunningOnSteamDeck()`. The function keeps working, reimplemented on
+  `IsRunningOnSteamHardware()`, but raises `E_DEPRECATED`. Use
+  `steam_utils_get_hardware_default_config()` for graphics defaults, or
+  `steam_utils_get_hardware_type()` for analytics.
+- `SteamNetworkingSockets012` is accepted as a fallback for older Steam clients
+  and raises `E_DEPRECATED` once per process.
+
+### Fixed
+- Documented SDK requirement corrected: the README claimed 1.58+, but
+  `SteamAPI_InitFlat` needs 1.59+ and `STEAMAPPS_INTERFACE_VERSION009` needs 1.64+
+
+### Notes
+- A Steam client offering only `SteamUtils010` is now rejected with a clear
+  `E_WARNING` instead of being used. SDK 1.65 removed two methods from the
+  middle of `ISteamUtils`, so the old interface is not vtable-compatible with
+  the flat functions in `libsteam_api` 1.65 — using it would call the wrong
+  vtable slots. Steam clients self-update, so this affects only long-dormant
+  installs.
+
 ## [0.14.0] - 2026-07-20
 
 ISteamUGC — delete a Workshop item. `steam_ugc_delete_item($fileId)` (async →

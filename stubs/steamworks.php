@@ -597,11 +597,56 @@ function steam_utils_get_country_code(): string|false {}
 
 /**
  * Prüft, ob das Spiel gerade auf einem Steam Deck läuft.
- * Nützlich um handheld-freundliche Defaults zu setzen (Fullscreen, größerer UI-Scale).
+ *
+ * @deprecated seit Steamworks SDK 1.65. Valve hat IsRunningOnSteamDeck()
+ *             entfernt, weil gerätebasierte Entscheidungen auf neuerer
+ *             Steam-Hardware falsch werden. Für Analytics
+ *             {@see steam_utils_get_hardware_type()}, für Grafik-Defaults
+ *             {@see steam_utils_get_hardware_default_config()}. Der Aufruf
+ *             funktioniert weiterhin, löst aber E_DEPRECATED aus.
  *
  * @return bool true wenn auf Steam Deck
  */
 function steam_utils_is_steam_deck(): bool {}
+
+/**
+ * Auf welcher Steam-Hardware der Prozess läuft.
+ *
+ * Laut Valve nur für Analytics, Support und Diagnose gedacht — nicht für
+ * Feature-Entscheidungen, sonst verhält sich das Spiel auf künftiger Hardware
+ * falsch. Für Grafik-Defaults stattdessen
+ * {@see steam_utils_get_hardware_default_config()}.
+ *
+ * Benötigt Steamworks SDK 1.65+.
+ *
+ * @return int|false STEAM_HARDWARE_TYPE_NONE, STEAM_HARDWARE_TYPE_STEAM_DECK,
+ *                   STEAM_HARDWARE_TYPE_STEAM_MACHINE oder
+ *                   STEAM_HARDWARE_TYPE_STEAM_FRAME; false wenn Steam nicht läuft
+ */
+function steam_utils_get_hardware_type(): int|false {}
+
+/**
+ * Empfohlenes Grafik-/Settings-Preset für das aktuelle Gerät.
+ *
+ * Valve kann den Rückgabewert pro Gerät über die Partner-Site nachjustieren,
+ * sodass ein bereits veröffentlichtes Spiel auch auf Hardware sinnvolle
+ * Defaults wählt, die es zum Release-Zeitpunkt noch nicht gab.
+ *
+ * Benötigt Steamworks SDK 1.65+.
+ *
+ * @return int|false eine der STEAM_HARDWARE_CONFIG_*-Konstanten;
+ *                   false wenn Steam nicht läuft
+ */
+function steam_utils_get_hardware_default_config(): int|false {}
+
+/**
+ * Prüft, ob das Spiel unter der Proton-Kompatibilitätsschicht auf Linux läuft.
+ *
+ * Benötigt Steamworks SDK 1.65+.
+ *
+ * @return bool true wenn unter Proton
+ */
+function steam_utils_is_running_under_proton(): bool {}
 
 /**
  * Gibt die Sprache der Steam-Client-UI zurück (kann von der Spielsprache abweichen).

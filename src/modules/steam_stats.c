@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 PHP_FUNCTION(steam_stats_set_achievement)
 {
@@ -9,7 +9,7 @@ PHP_FUNCTION(steam_stats_set_achievement)
         Z_PARAM_STR(achievement_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -26,7 +26,7 @@ PHP_FUNCTION(steam_stats_clear_achievement)
         Z_PARAM_STR(achievement_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -39,7 +39,7 @@ PHP_FUNCTION(steam_stats_store)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -56,7 +56,7 @@ PHP_FUNCTION(steam_stats_get_int)
         Z_PARAM_STR(name)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -81,7 +81,7 @@ PHP_FUNCTION(steam_stats_set_int)
         Z_PARAM_LONG(value)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -98,7 +98,7 @@ PHP_FUNCTION(steam_stats_get_float)
         Z_PARAM_STR(name)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -123,7 +123,7 @@ PHP_FUNCTION(steam_stats_set_float)
         Z_PARAM_DOUBLE(value)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -144,7 +144,7 @@ PHP_FUNCTION(steam_stats_indicate_achievement_progress)
         Z_PARAM_LONG(max_progress)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -168,7 +168,7 @@ PHP_FUNCTION(steam_stats_get_achievement)
         Z_PARAM_STR(name)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_NULL();
@@ -191,7 +191,7 @@ PHP_FUNCTION(steam_stats_get_achievement_unlock_time)
         Z_PARAM_STR(name)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_NULL();
@@ -212,7 +212,7 @@ PHP_FUNCTION(steam_stats_get_num_achievements)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -229,7 +229,7 @@ PHP_FUNCTION(steam_stats_get_achievement_name)
         Z_PARAM_LONG(index)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -254,7 +254,7 @@ PHP_FUNCTION(steam_stats_get_achievement_display_attribute)
         Z_PARAM_STR(key)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -274,7 +274,7 @@ PHP_FUNCTION(steam_stats_reset_all_stats)
         Z_PARAM_BOOL(achievements_too)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -296,7 +296,7 @@ PHP_FUNCTION(steam_stats_find_leaderboard)
         Z_PARAM_STR(name)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -322,7 +322,7 @@ PHP_FUNCTION(steam_stats_find_or_create_leaderboard)
         Z_PARAM_LONG(display_type)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -355,7 +355,7 @@ PHP_FUNCTION(steam_stats_upload_score)
         Z_PARAM_ARRAY_HT_OR_NULL(details_ht)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -404,7 +404,7 @@ PHP_FUNCTION(steam_stats_download_leaderboard_entries)
         Z_PARAM_LONG(range_end)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -431,7 +431,7 @@ PHP_FUNCTION(steam_stats_get_downloaded_entry)
         Z_PARAM_LONG(index)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -473,7 +473,7 @@ PHP_FUNCTION(steam_stats_get_leaderboard_entry_count)
         Z_PARAM_LONG(leaderboard)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUserStats *stats = SteamAPI_SteamUserStats_v013();
+    ISteamUserStats *stats = steamworks_stats();
     if (!stats) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

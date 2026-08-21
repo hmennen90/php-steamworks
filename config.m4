@@ -16,6 +16,7 @@ if test "$PHP_STEAMWORKS" != "no"; then
   fi
 
   STEAMWORKS_SOURCES="src/php_steamworks.c \
+    src/steam_iface.c \
     src/modules/steam_init.c \
     src/modules/steam_user.c \
     src/modules/steam_friends.c \

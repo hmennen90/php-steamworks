@@ -4,6 +4,7 @@ ARG_ENABLE("steamworks-mock", "Use mock Steam API for testing", "no");
 if (PHP_STEAMWORKS != "no") {
     var sources =
         "src\\php_steamworks.c " +
+        "src\\steam_iface.c " +
         "src\\modules\\steam_init.c " +
         "src\\modules\\steam_user.c " +
         "src\\modules\\steam_friends.c " +

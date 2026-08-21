@@ -16,6 +16,7 @@ typedef uint32_t DepotId_t;
 typedef uint64_t uint64_steamid;
 typedef int32_t  int32;
 typedef uint32_t uint32;
+typedef int32_t  HSteamUser;
 
 /* Async / leaderboard handle types (opaque uint64 on the SDK side) */
 typedef uint64_t SteamAPICall_t;

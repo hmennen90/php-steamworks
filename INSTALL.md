@@ -3,7 +3,7 @@
 ## 1. Steamworks SDK herunterladen
 
 1. Auf [partner.steamgames.com](https://partner.steamgames.com/) einloggen
-2. SDK unter **Documentation > Steamworks SDK** herunterladen
+2. SDK unter **Documentation > Steamworks SDK** herunterladen — benötigt wird **1.65 oder neuer**
 3. In den `sdk/`-Ordner im Projektverzeichnis entpacken
 
 Die Struktur sollte so aussehen:

@@ -1,11 +1,11 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 PHP_FUNCTION(steam_friends_get_name)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -25,7 +25,7 @@ PHP_FUNCTION(steam_friends_set_rich_presence)
         Z_PARAM_STR_OR_NULL(value)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -43,7 +43,7 @@ PHP_FUNCTION(steam_friends_activate_overlay)
         Z_PARAM_STR(dialog)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -63,7 +63,7 @@ PHP_FUNCTION(steam_friends_activate_overlay_to_web_page)
         Z_PARAM_BOOL(modal)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -83,7 +83,7 @@ PHP_FUNCTION(steam_friends_get_persona_state)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -101,7 +101,7 @@ PHP_FUNCTION(steam_friends_get_friend_count)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -121,7 +121,7 @@ PHP_FUNCTION(steam_friends_get_friend_by_index)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -139,7 +139,7 @@ PHP_FUNCTION(steam_friends_get_friend_relationship)
         Z_PARAM_LONG(steam_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -156,7 +156,7 @@ PHP_FUNCTION(steam_friends_get_friend_persona_state)
         Z_PARAM_LONG(steam_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -173,7 +173,7 @@ PHP_FUNCTION(steam_friends_get_friend_persona_name)
         Z_PARAM_LONG(steam_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -194,7 +194,7 @@ PHP_FUNCTION(steam_friends_request_user_information)
         Z_PARAM_BOOL(name_only)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
+    ISteamFriends *friends = steamworks_friends();
     if (!friends) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -217,8 +217,8 @@ PHP_FUNCTION(steam_friends_get_friend_avatar)
         Z_PARAM_LONG(size)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamFriends *friends = SteamAPI_SteamFriends_v018();
-    ISteamUtils   *utils   = SteamAPI_SteamUtils_v010();
+    ISteamFriends *friends = steamworks_friends();
+    ISteamUtils   *utils   = steamworks_utils();
     if (!friends || !utils) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_NULL();

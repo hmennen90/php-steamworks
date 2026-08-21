@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 PHP_FUNCTION(steam_remote_file_write)
 {
@@ -10,7 +10,7 @@ PHP_FUNCTION(steam_remote_file_write)
         Z_PARAM_STR(data)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamRemoteStorage *remote = SteamAPI_SteamRemoteStorage_v016();
+    ISteamRemoteStorage *remote = steamworks_remote_storage();
     if (!remote) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -29,7 +29,7 @@ PHP_FUNCTION(steam_remote_file_read)
         Z_PARAM_STR(filename)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamRemoteStorage *remote = SteamAPI_SteamRemoteStorage_v016();
+    ISteamRemoteStorage *remote = steamworks_remote_storage();
     if (!remote) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -62,7 +62,7 @@ PHP_FUNCTION(steam_remote_file_exists)
         Z_PARAM_STR(filename)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamRemoteStorage *remote = SteamAPI_SteamRemoteStorage_v016();
+    ISteamRemoteStorage *remote = steamworks_remote_storage();
     if (!remote) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -79,7 +79,7 @@ PHP_FUNCTION(steam_remote_file_delete)
         Z_PARAM_STR(filename)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamRemoteStorage *remote = SteamAPI_SteamRemoteStorage_v016();
+    ISteamRemoteStorage *remote = steamworks_remote_storage();
     if (!remote) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -92,7 +92,7 @@ PHP_FUNCTION(steam_remote_file_list)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamRemoteStorage *remote = SteamAPI_SteamRemoteStorage_v016();
+    ISteamRemoteStorage *remote = steamworks_remote_storage();
     if (!remote) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

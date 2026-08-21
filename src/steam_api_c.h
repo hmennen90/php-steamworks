@@ -6,6 +6,13 @@
  * php-steamworks actually uses, using opaque pointers for interface handles.
  *
  * All symbols here are exported by libsteam_api as extern "C" in the SDK.
+ *
+ * Interfaces are obtained through SteamInternal_FindOrCreateUserInterface()
+ * rather than the versioned SteamAPI_Steam*_vNNN() accessors. Those accessors
+ * are version-specific link-time symbols, so every SDK release that bumps an
+ * interface breaks linking — SDK 1.65 removed SteamAPI_SteamUtils_v010. The
+ * lookup below takes the version as a runtime string and is what the versioned
+ * accessors call internally. Version tables live in steam_iface.c.
  */
 
 #ifndef STEAM_API_C_H
@@ -28,6 +35,7 @@ typedef void ISteamNetworkingUtils;
 
 /* SDK typedefs */
 typedef uint32_t AppId_t;
+typedef int32_t  HSteamUser;
 typedef uint32_t DepotId_t;
 typedef int32_t  int32;
 typedef uint32_t uint32;
@@ -275,13 +283,29 @@ ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg);
 void SteamAPI_Shutdown(void);
 void SteamAPI_RunCallbacks(void);
 
-/* ── Accessor functions (return interface pointers) ────────────────── */
-ISteamUser         *SteamAPI_SteamUser_v023(void);
-ISteamFriends      *SteamAPI_SteamFriends_v018(void);
-ISteamUserStats    *SteamAPI_SteamUserStats_v013(void);
-ISteamRemoteStorage*SteamAPI_SteamRemoteStorage_v016(void);
-ISteamApps         *SteamAPI_SteamApps_v009(void);
-ISteamUtils        *SteamAPI_SteamUtils_v010(void);
+/* ESteamHardwareType — ISteamUtils::IsRunningOnSteamHardware() (SDK 1.65+) */
+typedef enum {
+    k_ESteamHardwareTypeNone         = 0,
+    k_ESteamHardwareTypeSteamDeck    = 1,
+    k_ESteamHardwareTypeSteamMachine = 2,
+    k_ESteamHardwareTypeSteamFrame   = 3,
+} ESteamHardwareType;
+
+/* ESteamHardwareDefaultConfig — ISteamUtils::GetSteamHardwareDefaultConfig() */
+typedef enum {
+    k_ESteamHardwareDefaultConfigNone         = 0,
+    k_ESteamHardwareDefaultConfigLow          = 1,
+    k_ESteamHardwareDefaultConfigMedium       = 2,
+    k_ESteamHardwareDefaultConfigHigh         = 3,
+    k_ESteamHardwareDefaultConfigMax          = 4,
+    k_ESteamHardwareDefaultConfigSteamDeck    = 5,
+    k_ESteamHardwareDefaultConfigSteamMachine = 6,
+    k_ESteamHardwareDefaultConfigSteamFrame   = 7,
+} ESteamHardwareDefaultConfig;
+
+/* ── Runtime interface lookup ───────────────────────────────────────── */
+HSteamUser SteamAPI_GetHSteamUser(void);
+void      *SteamInternal_FindOrCreateUserInterface(HSteamUser hSteamUser, const char *pszVersion);
 
 /* ── ISteamUser ────────────────────────────────────────────────────── */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
@@ -368,7 +392,10 @@ int         SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self);
 uint32      SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self);
 const char *SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self);
-bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self);
+/* SDK 1.65 removed IsSteamRunningOnSteamDeck(); these replace it. */
+int         SteamAPI_ISteamUtils_IsRunningOnSteamHardware(ISteamUtils *self);
+int         SteamAPI_ISteamUtils_GetSteamHardwareDefaultConfig(ISteamUtils *self);
+bool        SteamAPI_ISteamUtils_IsRunningUnderProton(ISteamUtils *self);
 const char *SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self);
 uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self);
 uint8       SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);
@@ -402,7 +429,6 @@ void SteamAPI_ISteamTimeline_SetGamePhaseAttribute(ISteamTimeline *self, const c
 void SteamAPI_ISteamTimeline_OpenOverlayToGamePhase(ISteamTimeline *self, const char *phase_id);
 void SteamAPI_ISteamTimeline_OpenOverlayToTimelineEvent(ISteamTimeline *self, TimelineEventHandle_t event);
 
-ISteamTimeline *SteamAPI_SteamTimeline_v004(void);
 
 /* ── ISteamUGC (Workshop, V021) — consume path ─────────────────────────────
  * Verified against Steamworks SDK 1.64. Subscribe/Unsubscribe are async
@@ -436,15 +462,12 @@ SteamAPICall_t    SteamAPI_ISteamUGC_SubmitItemUpdate(ISteamUGC *self, UGCUpdate
 int    SteamAPI_ISteamUGC_GetItemUpdateProgress(ISteamUGC *self, UGCUpdateHandle_t handle, uint64_t *bytes_processed, uint64_t *bytes_total);
 SteamAPICall_t    SteamAPI_ISteamUGC_DeleteItem(ISteamUGC *self, PublishedFileId_t file_id);
 
-ISteamUGC *SteamAPI_SteamUGC_v021(void);
 
 /* ── ISteamNetworkingSockets / Utils (P2P messaging core) ──────────────────
  * Verified against Steamworks SDK 1.64. identity/options/message args are opaque
  * pointers here (we build/read them via SteamNetworkingIdentity_* helpers and the
  * STEAMWORKS_NETMSG_* offsets above). ConnectP2P takes the identity by reference,
  * which is a pointer at the flat ABI level. */
-ISteamNetworkingSockets *SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void);
-ISteamNetworkingUtils   *SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void);
 
 HSteamListenSocket  SteamAPI_ISteamNetworkingSockets_CreateListenSocketP2P(ISteamNetworkingSockets *self, int local_virtual_port, int n_options, const void *options);
 HSteamNetConnection SteamAPI_ISteamNetworkingSockets_ConnectP2P(ISteamNetworkingSockets *self, const void *identity_remote, int remote_virtual_port, int n_options, const void *options);

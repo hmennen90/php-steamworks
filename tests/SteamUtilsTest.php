@@ -68,4 +68,83 @@ class SteamUtilsTest extends TestCase
         $time = @steam_utils_get_server_real_time();
         $this->assertTrue(is_int($time) || $time === false);
     }
+
+    /**
+     * SDK 1.65 removed ISteamUtils::IsRunningOnSteamDeck(). The PHP function
+     * stays, reimplemented on IsRunningOnSteamHardware(), but is deprecated in
+     * favour of the more specific hardware queries Valve now recommends.
+     */
+    public function testIsSteamDeckIsDeprecated(): void
+    {
+        $raised = null;
+        set_error_handler(static function (int $errno, string $errstr) use (&$raised): bool {
+            $raised = $errstr;
+            return true;
+        }, E_DEPRECATED);
+
+        try {
+            steam_utils_is_steam_deck();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertNotNull($raised, 'steam_utils_is_steam_deck() must raise E_DEPRECATED');
+        $this->assertStringContainsString('steam_utils_get_hardware_type', (string) $raised);
+    }
+
+    public function testIsSteamDeckReflectsHardwareType(): void
+    {
+        // The mock reports a Steam Deck, so the reimplementation must agree.
+        $this->assertTrue(@steam_utils_is_steam_deck());
+        $this->assertSame(STEAM_HARDWARE_TYPE_STEAM_DECK, @steam_utils_get_hardware_type());
+    }
+
+    public function testGetHardwareTypeExists(): void
+    {
+        $this->assertTrue(function_exists('steam_utils_get_hardware_type'));
+    }
+
+    public function testGetHardwareTypeReturnsIntOrFalse(): void
+    {
+        $type = @steam_utils_get_hardware_type();
+        $this->assertTrue(is_int($type) || $type === false);
+    }
+
+    public function testIsRunningUnderProtonExists(): void
+    {
+        $this->assertTrue(function_exists('steam_utils_is_running_under_proton'));
+    }
+
+    public function testIsRunningUnderProtonReturnsBool(): void
+    {
+        $this->assertIsBool(@steam_utils_is_running_under_proton());
+    }
+
+    public function testGetHardwareDefaultConfigExists(): void
+    {
+        $this->assertTrue(function_exists('steam_utils_get_hardware_default_config'));
+    }
+
+    public function testGetHardwareDefaultConfigReturnsIntOrFalse(): void
+    {
+        $config = @steam_utils_get_hardware_default_config();
+        $this->assertTrue(is_int($config) || $config === false);
+    }
+
+    public function testHardwareConstantsAreRegistered(): void
+    {
+        $this->assertSame(0, STEAM_HARDWARE_TYPE_NONE);
+        $this->assertSame(1, STEAM_HARDWARE_TYPE_STEAM_DECK);
+        $this->assertSame(2, STEAM_HARDWARE_TYPE_STEAM_MACHINE);
+        $this->assertSame(3, STEAM_HARDWARE_TYPE_STEAM_FRAME);
+
+        $this->assertSame(0, STEAM_HARDWARE_CONFIG_NONE);
+        $this->assertSame(1, STEAM_HARDWARE_CONFIG_LOW);
+        $this->assertSame(2, STEAM_HARDWARE_CONFIG_MEDIUM);
+        $this->assertSame(3, STEAM_HARDWARE_CONFIG_HIGH);
+        $this->assertSame(4, STEAM_HARDWARE_CONFIG_MAX);
+        $this->assertSame(5, STEAM_HARDWARE_CONFIG_STEAM_DECK);
+        $this->assertSame(6, STEAM_HARDWARE_CONFIG_STEAM_MACHINE);
+        $this->assertSame(7, STEAM_HARDWARE_CONFIG_STEAM_FRAME);
+    }
 }

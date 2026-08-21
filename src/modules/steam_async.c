@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 /*
  * Async CallResult infrastructure (Handle + Poll model).
@@ -66,7 +66,7 @@ PHP_FUNCTION(steam_get_call_result)
     }
     enum steamworks_call_kind kind = (enum steamworks_call_kind)(uintptr_t)stored;
 
-    ISteamUtils *utils = SteamAPI_SteamUtils_v010();
+    ISteamUtils *utils = steamworks_utils();
     if (!utils) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_NULL();

@@ -149,17 +149,9 @@ ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg);
 void SteamAPI_Shutdown(void);
 void SteamAPI_RunCallbacks(void);
 
-/* Accessors */
-ISteamUser*          SteamAPI_SteamUser_v023(void);
-ISteamFriends*       SteamAPI_SteamFriends_v018(void);
-ISteamUserStats*     SteamAPI_SteamUserStats_v013(void);
-ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void);
-ISteamApps*          SteamAPI_SteamApps_v009(void);
-ISteamUtils*         SteamAPI_SteamUtils_v010(void);
-ISteamTimeline*      SteamAPI_SteamTimeline_v004(void);
-ISteamUGC*           SteamAPI_SteamUGC_v021(void);
-ISteamNetworkingSockets* SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void);
-ISteamNetworkingUtils*   SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void);
+/* Runtime interface lookup — version resolved by string, not by symbol */
+HSteamUser SteamAPI_GetHSteamUser(void);
+void      *SteamInternal_FindOrCreateUserInterface(HSteamUser hSteamUser, const char *pszVersion);
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
@@ -248,7 +240,9 @@ int         SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self);
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self);
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self);
-bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self);
+int         SteamAPI_ISteamUtils_IsRunningOnSteamHardware(ISteamUtils *self);
+int         SteamAPI_ISteamUtils_GetSteamHardwareDefaultConfig(ISteamUtils *self);
+bool        SteamAPI_ISteamUtils_IsRunningUnderProton(ISteamUtils *self);
 const char* SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self);
 uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self);
 uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self);

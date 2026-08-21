@@ -1,11 +1,11 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 PHP_FUNCTION(steam_user_get_steam_id)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -19,7 +19,7 @@ PHP_FUNCTION(steam_user_is_logged_on)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -32,7 +32,7 @@ PHP_FUNCTION(steam_user_get_player_steam_level)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -57,7 +57,7 @@ PHP_FUNCTION(steam_user_get_auth_session_ticket)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -89,7 +89,7 @@ PHP_FUNCTION(steam_user_begin_auth_session)
         Z_PARAM_LONG(steam_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -109,7 +109,7 @@ PHP_FUNCTION(steam_user_end_auth_session)
         Z_PARAM_LONG(steam_id)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;
@@ -127,7 +127,7 @@ PHP_FUNCTION(steam_user_cancel_auth_ticket)
         Z_PARAM_LONG(handle)
     ZEND_PARSE_PARAMETERS_END();
 
-    ISteamUser *user = SteamAPI_SteamUser_v023();
+    ISteamUser *user = steamworks_user();
     if (!user) {
         php_error_docref(NULL, E_WARNING, "Steam not initialized");
         RETURN_FALSE;

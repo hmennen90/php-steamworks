@@ -5,7 +5,7 @@ Native PHP extension providing access to the [Steamworks SDK](https://partner.st
 ## Requirements
 
 - PHP 8.1+
-- Steamworks SDK 1.58+ (download from [partner.steamgames.com](https://partner.steamgames.com/))
+- Steamworks SDK 1.65 (download from [partner.steamgames.com](https://partner.steamgames.com/)) — see [SDK compatibility](#sdk-compatibility)
 - macOS (arm64/x86_64), Linux (x86_64), or Windows (x86_64)
 
 ## Installation
@@ -152,7 +152,10 @@ steam_shutdown();
 - `steam_utils_get_app_id(): int|false`
 - `steam_utils_is_overlay_enabled(): bool`
 - `steam_utils_get_country_code(): string|false`
-- `steam_utils_is_steam_deck(): bool`
+- `steam_utils_is_steam_deck(): bool` — **deprecated** since SDK 1.65, see below
+- `steam_utils_get_hardware_type(): int|false` — `STEAM_HARDWARE_TYPE_*`
+- `steam_utils_get_hardware_default_config(): int|false` — `STEAM_HARDWARE_CONFIG_*`
+- `steam_utils_is_running_under_proton(): bool`
 - `steam_utils_get_steam_ui_language(): string|false`
 - `steam_utils_get_server_real_time(): int|false`
 - `steam_utils_get_current_battery_power(): int|false` — 0–100 %, 255 = on AC power
@@ -162,7 +165,7 @@ steam_shutdown();
 
 Annotate the Steam Game Recording timeline. Most calls are fire-and-forget (`bool`);
 the two `does_*_recording_exist` calls are async (return a handle — poll `steam_get_call_result`).
-Verified against Steamworks SDK 1.64 (`STEAMTIMELINE_INTERFACE_V004`).
+Verified against Steamworks SDK 1.65 (`STEAMTIMELINE_INTERFACE_V004`).
 
 - `steam_timeline_set_game_mode(int $mode): bool` — `STEAM_TIMELINE_GAME_MODE_*`
 - `steam_timeline_set_tooltip(string $description, float $time_delta = 0.0): bool`
@@ -205,6 +208,53 @@ See [`examples/leaderboard.php`](examples/leaderboard.php) for a full round-trip
 - Display: `STEAM_LEADERBOARD_DISPLAY_NUMERIC`, `STEAM_LEADERBOARD_DISPLAY_TIME_SECONDS`, `STEAM_LEADERBOARD_DISPLAY_TIME_MILLISECONDS`
 - Upload: `STEAM_LEADERBOARD_UPLOAD_KEEP_BEST`, `STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE`
 - Download: `STEAM_LEADERBOARD_DATA_GLOBAL`, `STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER`, `STEAM_LEADERBOARD_DATA_FRIENDS`
+- Hardware type: `STEAM_HARDWARE_TYPE_NONE`, `STEAM_HARDWARE_TYPE_STEAM_DECK`, `STEAM_HARDWARE_TYPE_STEAM_MACHINE`, `STEAM_HARDWARE_TYPE_STEAM_FRAME`
+- Hardware preset: `STEAM_HARDWARE_CONFIG_NONE`, `..._LOW`, `..._MEDIUM`, `..._HIGH`, `..._MAX`, `..._STEAM_DECK`, `..._STEAM_MACHINE`, `..._STEAM_FRAME`
+
+## SDK compatibility
+
+Built and verified against **Steamworks SDK 1.65**, which is the minimum: the
+1.65-only `ISteamUtils` calls are link-time dependencies. `sdk/redistributable_bin/`
+already ships the matching Steam runtime libraries, so a default build needs no
+extra download.
+
+Steam interfaces are resolved by version string at runtime rather than through
+the SDK's versioned `SteamAPI_Steam*_vNNN()` accessor symbols. Those accessors
+are version-locked link-time symbols, so every SDK release that bumps an
+interface breaks the build outright — SDK 1.65 removed `SteamAPI_SteamUtils_v010`.
+With the runtime lookup, an interface bump is a one-line change to a version
+table instead.
+
+### Old Steam clients
+
+Where it is safe, an older interface version is accepted as a deprecated
+fallback; using one raises `E_DEPRECATED` once per process.
+
+| Interface | Current | Deprecated fallback |
+|---|---|---|
+| `ISteamNetworkingSockets` | `SteamNetworkingSockets013` (SDK 1.65+) | `SteamNetworkingSockets012` (SDK ≤ 1.64) |
+| `ISteamUtils` | `SteamUtils011` (SDK 1.65+) | none — see below |
+
+A fallback is only safe when the older interface has the **same vtable layout**:
+the flat `SteamAPI_ISteamX_*` functions inside `libsteam_api` call fixed vtable
+slots. SDK 1.65 removed two methods from the middle of `ISteamUtils`, so
+`SteamUtils010` is not layout-compatible and is deliberately not accepted. A
+Steam client that offers only the old interface gets a clear
+`E_WARNING` ("the Steam client is older than this build") and a `false` return,
+rather than a call into the wrong vtable slot.
+
+Since Steam clients update themselves, this only affects clients that have not
+run in a long time.
+
+### Deprecated functions
+
+`steam_utils_is_steam_deck()` still works — it is now implemented on
+`IsRunningOnSteamHardware()` — but SDK 1.65 removed the underlying
+`IsRunningOnSteamDeck()` call, and it raises `E_DEPRECATED`. Valve's guidance is
+to avoid device checks entirely: use `steam_utils_get_hardware_default_config()`
+for graphics defaults, or a capability-specific query, so the game keeps
+behaving correctly on Steam hardware that did not exist when it shipped. Use
+`steam_utils_get_hardware_type()` only for analytics and diagnostics.
 
 ## License
 

@@ -5,6 +5,10 @@
 
 #include "public/steam/steam_api_flat.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 static int mock_instance = 0;
 
 /* Core */
@@ -17,16 +21,79 @@ void SteamAPI_RunCallbacks(void) { }
 void SteamAPI_RegisterCallback(void *callback, int iCallback) { }
 void SteamAPI_UnregisterCallback(void *callback) { }
 
-/* Accessors — return a non-NULL pointer so functions can proceed */
-ISteamUser*          SteamAPI_SteamUser_v023(void)          { return (ISteamUser*)&mock_instance; }
-ISteamFriends*       SteamAPI_SteamFriends_v018(void)       { return (ISteamFriends*)&mock_instance; }
-ISteamUserStats*     SteamAPI_SteamUserStats_v013(void)     { return (ISteamUserStats*)&mock_instance; }
-ISteamRemoteStorage* SteamAPI_SteamRemoteStorage_v016(void) { return (ISteamRemoteStorage*)&mock_instance; }
-ISteamApps*          SteamAPI_SteamApps_v009(void)          { return (ISteamApps*)&mock_instance; }
-ISteamUtils*         SteamAPI_SteamUtils_v010(void)         { return (ISteamUtils*)&mock_instance; }
-ISteamUGC*           SteamAPI_SteamUGC_v021(void)           { return (ISteamUGC*)&mock_instance; }
-ISteamNetworkingSockets* SteamAPI_SteamNetworkingSockets_SteamAPI_v012(void) { return (ISteamNetworkingSockets*)&mock_instance; }
-ISteamNetworkingUtils*   SteamAPI_SteamNetworkingUtils_SteamAPI_v004(void)   { return (ISteamNetworkingUtils*)&mock_instance; }
+/*
+ * Runtime interface lookup.
+ *
+ * Mirrors libsteam_api: the caller asks for an interface by version string and
+ * gets NULL when the Steam client does not implement it. Keeping the mock
+ * strict is what lets CI catch a wrong or stale version string — with a
+ * permissive mock the interface would simply fail to resolve and every function
+ * would return its normal failure value, indistinguishable from "Steam is not
+ * running".
+ *
+ * The strings below are copied from the SDK's *_INTERFACE_VERSION defines and
+ * must stay in sync with the tables in src/steam_iface.c.
+ */
+
+/* Versions this mock implements — Steamworks SDK 1.65 */
+static const char *const mock_offered[] = {
+    "SteamUser023",
+    "SteamFriends018",
+    "STEAMUSERSTATS_INTERFACE_VERSION013",
+    "STEAMREMOTESTORAGE_INTERFACE_VERSION016",
+    "STEAMAPPS_INTERFACE_VERSION009",
+    "SteamUtils011",
+    "STEAMTIMELINE_INTERFACE_V004",
+    "STEAMUGC_INTERFACE_VERSION021",
+    "SteamNetworkingSockets013",
+    "SteamNetworkingUtils004",
+    NULL
+};
+
+/* Legacy versions the extension may probe as a fallback — recognised, not offered. */
+static const char *const mock_legacy[] = {
+    "SteamUtils010",              /* SDK 1.61–1.64 */
+    "SteamNetworkingSockets012",  /* SDK <= 1.64 */
+    NULL
+};
+
+static int mock_in_list(const char *const *list, const char *version) {
+    for (int i = 0; list[i] != NULL; i++) {
+        if (strcmp(list[i], version) == 0) { return 1; }
+    }
+    return 0;
+}
+
+/* Simulates a Steam client that predates SDK 1.65, to exercise the fallback. */
+static int mock_env_flag(const char *name) {
+    const char *flag = getenv(name);
+    return flag != NULL && flag[0] == '1';
+}
+
+HSteamUser SteamAPI_GetHSteamUser(void) { return 1; }
+
+void *SteamInternal_FindOrCreateUserInterface(HSteamUser hSteamUser, const char *pszVersion) {
+    (void)hSteamUser;
+
+    if (pszVersion == NULL) { return NULL; }
+
+    if (strncmp(pszVersion, "SteamUtils", 10) == 0) {
+        const char *available = mock_env_flag("STEAMWORKS_MOCK_LEGACY_UTILS") ? "SteamUtils010" : "SteamUtils011";
+        return strcmp(pszVersion, available) == 0 ? (void*)&mock_instance : NULL;
+    }
+
+    if (strncmp(pszVersion, "SteamNetworkingSockets", 22) == 0) {
+        const char *available = mock_env_flag("STEAMWORKS_MOCK_LEGACY_NET")
+            ? "SteamNetworkingSockets012" : "SteamNetworkingSockets013";
+        return strcmp(pszVersion, available) == 0 ? (void*)&mock_instance : NULL;
+    }
+
+    if (mock_in_list(mock_offered, pszVersion)) { return (void*)&mock_instance; }
+    if (mock_in_list(mock_legacy,  pszVersion)) { return NULL; }
+
+    fprintf(stderr, "MOCK: unknown interface version \"%s\"\n", pszVersion);
+    return NULL;
+}
 
 /* ISteamUser */
 uint64_steamid SteamAPI_ISteamUser_GetSteamID(ISteamUser *self) { return 0; }
@@ -137,7 +204,9 @@ int            SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self) { return 10; 
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self) { return 480; }
 bool        SteamAPI_ISteamUtils_IsOverlayEnabled(ISteamUtils *self) { return false; }
 const char* SteamAPI_ISteamUtils_GetIPCountry(ISteamUtils *self) { return "US"; }
-bool        SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(ISteamUtils *self) { return false; }
+int         SteamAPI_ISteamUtils_IsRunningOnSteamHardware(ISteamUtils *self) { return 1; }        /* SteamDeck */
+int         SteamAPI_ISteamUtils_GetSteamHardwareDefaultConfig(ISteamUtils *self) { return 5; }   /* SteamDeck preset */
+bool        SteamAPI_ISteamUtils_IsRunningUnderProton(ISteamUtils *self) { return false; }
 const char* SteamAPI_ISteamUtils_GetSteamUILanguage(ISteamUtils *self) { return "english"; }
 uint32      SteamAPI_ISteamUtils_GetServerRealTime(ISteamUtils *self) { return 1609459200; } /* 2021-01-01 */
 uint8_t     SteamAPI_ISteamUtils_GetCurrentBatteryPower(ISteamUtils *self) { return 255; }   /* on AC power */
@@ -229,7 +298,6 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
 
 /* ISteamTimeline — accessor + no-op annotations. Async "does...exist" calls
  * return deterministic fake handles (10 = event, 11 = game phase). */
-ISteamTimeline* SteamAPI_SteamTimeline_v004(void) { return (ISteamTimeline*)&mock_instance; }
 
 void SteamAPI_ISteamTimeline_SetTimelineGameMode(ISteamTimeline *self, ETimelineGameMode mode) { }
 void SteamAPI_ISteamTimeline_SetTimelineTooltip(ISteamTimeline *self, const char *description, float time_delta) { }

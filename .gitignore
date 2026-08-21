@@ -12,6 +12,7 @@ sdk/Readme.txt
 
 # Build artifacts
 *.lo
+*.dep
 *.la
 *.o
 src/*.so

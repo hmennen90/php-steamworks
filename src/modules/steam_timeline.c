@@ -1,5 +1,5 @@
 #include "../php_steamworks.h"
-#include "../steam_api_c.h"
+#include "../steam_iface.h"
 
 /* ── ISteamTimeline (Game Recording / Timeline, SDK V004) ──────────────────
  *
@@ -16,10 +16,6 @@
  * Steamworks SDK 1.64 (STEAMTIMELINE_INTERFACE_V004).
  */
 
-static ISteamTimeline *steamworks_timeline(void)
-{
-    return SteamAPI_SteamTimeline_v004();
-}
 
 PHP_FUNCTION(steam_timeline_set_game_mode)
 {
