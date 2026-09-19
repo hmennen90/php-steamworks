@@ -317,6 +317,43 @@ PHP_FUNCTION(steam_get_call_result)
             add_assoc_long(return_value, "leaderboard", (zend_long)result.m_hSteamLeaderboard);
             return;
         }
+        case STEAMWORKS_CALL_LOBBY_CREATED: {
+            /* Layout + callback id (513) from SDK 1.64 isteammatchmaking.h. */
+            LobbyCreated_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_LobbyCreated, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read lobby created result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "lobby_created");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "lobby", (zend_long)result.m_ulSteamIDLobby);
+            return;
+        }
+        case STEAMWORKS_CALL_LOBBY_ENTERED: {
+            /* Layout + callback id (504) from SDK 1.64 isteammatchmaking.h. */
+            LobbyEnter_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_LobbyEnter, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read lobby enter result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "lobby_entered");
+            add_assoc_long(return_value, "lobby", (zend_long)result.m_ulSteamIDLobby);
+            add_assoc_bool(return_value, "success",
+                result.m_EChatRoomEnterResponse == 1 /* k_EChatRoomEnterResponseSuccess */);
+            add_assoc_long(return_value, "response", (zend_long)result.m_EChatRoomEnterResponse);
+            add_assoc_bool(return_value, "locked", result.m_bLocked != 0);
+            add_assoc_long(return_value, "permissions", (zend_long)result.m_rgfChatPermissions);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;

@@ -71,7 +71,17 @@ enum {
     k_iCallback_RemoteStorageFileShareResult                = 1300 + 7,
     k_iCallback_RemoteStorageDownloadUGCResult              = 1300 + 17,
     k_iCallback_LeaderboardUGCSet                           = 1100 + 11,
+    k_iCallback_GameLobbyJoinRequested                      = 300 + 33,
+    k_iCallback_GameRichPresenceJoinRequested               = 300 + 37,
+    k_iCallback_LobbyEnter                                  = 500 + 4,
+    k_iCallback_LobbyDataUpdate                             = 500 + 5,
+    k_iCallback_LobbyChatUpdate                             = 500 + 6,
+    k_iCallback_LobbyChatMsg                                = 500 + 7,
+    k_iCallback_LobbyCreated                                = 500 + 13,
+    k_iCallback_SteamNetConnectionStatusChanged             = 1220 + 1,
 };
+
+#define k_cchMaxRichPresenceValueLength 256
 
 #define k_cchFilenameMax 260
 
@@ -167,6 +177,58 @@ typedef struct {
     int32              m_eResult;
     SteamLeaderboard_t m_hSteamLeaderboard;
 } LeaderboardUGCSet_t;
+
+/* Phase 4b — invites and joins (must match src/steam_api_c.h) */
+typedef struct {
+    uint64_t m_gameID;
+    uint32   m_unGameIP;
+    uint16_t m_usGamePort;
+    uint16_t m_usQueryPort;
+    uint64_t m_steamIDLobby;
+} FriendGameInfo_t;
+
+typedef struct {
+    uint64_t m_steamIDFriend;
+    char     m_rgchConnect[k_cchMaxRichPresenceValueLength];
+} GameRichPresenceJoinRequested_t;
+
+/* Phase 4c — lobbies (must match src/steam_api_c.h) */
+typedef struct {
+    int32    m_eResult;
+    uint64_t m_ulSteamIDLobby;
+} LobbyCreated_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint32   m_rgfChatPermissions;
+    uint8_t  m_bLocked;
+    uint32   m_EChatRoomEnterResponse;
+} LobbyEnter_t;
+
+typedef struct {
+    uint64_t m_steamIDLobby;
+    uint64_t m_steamIDFriend;
+} GameLobbyJoinRequested_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDMember;
+    uint8_t  m_bSuccess;
+} LobbyDataUpdate_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDUserChanged;
+    uint64_t m_ulSteamIDMakingChange;
+    uint32   m_rgfChatMemberStateChange;
+} LobbyChatUpdate_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDUser;
+    uint8_t  m_eChatEntryType;
+    uint32   m_iChatID;
+} LobbyChatMsg_t;
 #pragma pack(pop)
 
 typedef enum {
@@ -180,6 +242,34 @@ typedef enum {
 ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg);
 void SteamAPI_Shutdown(void);
 void SteamAPI_RunCallbacks(void);
+
+/* Test hooks — not part of the Steam API. They build a callback struct in the
+   SDK's layout and deliver it to every CCallbackBase registered for its id, the
+   way SteamAPI_RunCallbacks would. Driven by steam_mock_fire_callback(). */
+void SteamMock_FireRichPresenceJoinRequested(uint64_t friend_id, const char *connect);
+void SteamMock_FireLobbyJoinRequested(uint64_t lobby, uint64_t friend_id);
+void SteamMock_FireLobbyDataUpdate(uint64_t lobby, uint64_t member, bool success);
+void SteamMock_FireLobbyChatUpdate(uint64_t lobby, uint64_t user, uint64_t changed_by, uint32 state);
+void SteamMock_FireLobbyChatMsg(uint64_t lobby, uint64_t user, const char *message, int len);
+
+/* ISteamMatchmaking */
+SteamAPICall_t SteamAPI_ISteamMatchmaking_CreateLobby(ISteamMatchmaking *self, int lobby_type, int max_members);
+SteamAPICall_t SteamAPI_ISteamMatchmaking_JoinLobby(ISteamMatchmaking *self, uint64_steamid lobby);
+void           SteamAPI_ISteamMatchmaking_LeaveLobby(ISteamMatchmaking *self, uint64_steamid lobby);
+bool           SteamAPI_ISteamMatchmaking_InviteUserToLobby(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid invitee);
+int            SteamAPI_ISteamMatchmaking_GetNumLobbyMembers(ISteamMatchmaking *self, uint64_steamid lobby);
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyMemberByIndex(ISteamMatchmaking *self, uint64_steamid lobby, int member);
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value);
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid user, const char *key);
+void           SteamAPI_ISteamMatchmaking_SetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value);
+bool           SteamAPI_ISteamMatchmaking_SendLobbyChatMsg(ISteamMatchmaking *self, uint64_steamid lobby, const void *body, int size);
+int            SteamAPI_ISteamMatchmaking_GetLobbyChatEntry(ISteamMatchmaking *self, uint64_steamid lobby, int chat_id, uint64_steamid *user, void *data, int size, int *entry_type);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyJoinable(ISteamMatchmaking *self, uint64_steamid lobby, bool joinable);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyType(ISteamMatchmaking *self, uint64_steamid lobby, int lobby_type);
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid new_owner);
+void           SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialog(ISteamFriends *self, uint64_steamid lobby);
 
 /* Runtime interface lookup — version resolved by string, not by symbol */
 HSteamUser SteamAPI_GetHSteamUser(void);
@@ -208,6 +298,13 @@ void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils
 void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id);
 uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity);
 void SteamAPI_SteamNetworkingMessage_t_Release(void *message);
+bool               SteamAPI_ISteamNetworkingSockets_CloseListenSocket(ISteamNetworkingSockets *self, HSteamListenSocket socket);
+HSteamNetPollGroup SteamAPI_ISteamNetworkingSockets_CreatePollGroup(ISteamNetworkingSockets *self);
+bool               SteamAPI_ISteamNetworkingSockets_DestroyPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group);
+bool               SteamAPI_ISteamNetworkingSockets_SetConnectionPollGroup(ISteamNetworkingSockets *self, HSteamNetConnection conn, HSteamNetPollGroup group);
+int                SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group, void **out_messages, int max_messages);
+int                SteamAPI_ISteamNetworkingSockets_GetConnectionRealTimeStatus(ISteamNetworkingSockets *self, HSteamNetConnection conn, void *status, int lanes, void *lane_status);
+void SteamMock_FireNetConnectionStatus(uint32 conn, uint64_t peer, uint32 listen_socket, int32 state, int32 old_state);
 
 /* ISteamFriends */
 const char* SteamAPI_ISteamFriends_GetPersonaName(ISteamFriends *self);
@@ -224,6 +321,10 @@ int         SteamAPI_ISteamFriends_GetSmallFriendAvatar(ISteamFriends *self, uin
 int         SteamAPI_ISteamFriends_GetMediumFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
 int         SteamAPI_ISteamFriends_GetLargeFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
 bool        SteamAPI_ISteamFriends_RequestUserInformation(ISteamFriends *self, uint64_steamid steam_id, bool require_name_only);
+bool        SteamAPI_ISteamFriends_InviteUserToGame(ISteamFriends *self, uint64_steamid friend_id, const char *connect);
+void        SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString(ISteamFriends *self, const char *connect);
+const char *SteamAPI_ISteamFriends_GetFriendRichPresence(ISteamFriends *self, uint64_steamid friend_id, const char *key);
+bool        SteamAPI_ISteamFriends_GetFriendGamePlayed(ISteamFriends *self, uint64_steamid friend_id, FriendGameInfo_t *info);
 
 /* ISteamUserStats */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name);
@@ -272,6 +373,7 @@ uint32      SteamAPI_ISteamApps_GetEarliestPurchaseUnixTime(ISteamApps *self, Ap
 uint32      SteamAPI_ISteamApps_GetInstalledDepots(ISteamApps *self, AppId_t appid, DepotId_t *depots, uint32 max_depots);
 int         SteamAPI_ISteamApps_GetDLCCount(ISteamApps *self);
 int         SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self);
+int         SteamAPI_ISteamApps_GetLaunchCommandLine(ISteamApps *self, char *command_line, int size);
 
 /* ISteamUtils */
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);

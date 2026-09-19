@@ -31,6 +31,8 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_REMOTE_FILE_SHARE,        /* RemoteStorageFileShareResult_t */
     STEAMWORKS_CALL_REMOTE_UGC_DOWNLOAD,      /* RemoteStorageDownloadUGCResult_t */
     STEAMWORKS_CALL_LEADERBOARD_UGC_SET,      /* LeaderboardUGCSet_t */
+    STEAMWORKS_CALL_LOBBY_CREATED,            /* LobbyCreated_t */
+    STEAMWORKS_CALL_LOBBY_ENTERED,            /* LobbyEnter_t */
 };
 
 void steamworks_async_minit(void);
@@ -50,6 +52,30 @@ void steamworks_callbacks_unregister(void);  /* unregister before steam_shutdown
 PHP_FUNCTION(steam_user_get_auth_ticket_for_web_api);
 PHP_FUNCTION(steam_user_get_web_api_ticket_result);
 PHP_FUNCTION(steam_net_get_connection_events); /* steam_callback.c */
+PHP_FUNCTION(steam_friends_get_join_requests); /* steam_callback.c */
+PHP_FUNCTION(steam_matchmaking_get_events);    /* steam_callback.c */
+
+/* steam_matchmaking.c */
+PHP_FUNCTION(steam_matchmaking_create_lobby);
+PHP_FUNCTION(steam_matchmaking_join_lobby);
+PHP_FUNCTION(steam_matchmaking_leave_lobby);
+PHP_FUNCTION(steam_matchmaking_invite_user_to_lobby);
+PHP_FUNCTION(steam_matchmaking_get_num_lobby_members);
+PHP_FUNCTION(steam_matchmaking_get_lobby_member_by_index);
+PHP_FUNCTION(steam_matchmaking_get_lobby_owner);
+PHP_FUNCTION(steam_matchmaking_set_lobby_owner);
+PHP_FUNCTION(steam_matchmaking_get_lobby_data);
+PHP_FUNCTION(steam_matchmaking_set_lobby_data);
+PHP_FUNCTION(steam_matchmaking_get_lobby_member_data);
+PHP_FUNCTION(steam_matchmaking_set_lobby_member_data);
+PHP_FUNCTION(steam_matchmaking_set_lobby_joinable);
+PHP_FUNCTION(steam_matchmaking_set_lobby_type);
+PHP_FUNCTION(steam_matchmaking_send_lobby_chat_msg);
+PHP_FUNCTION(steam_friends_activate_overlay_invite_dialog);
+
+#ifdef STEAMWORKS_MOCK
+PHP_FUNCTION(steam_mock_fire_callback);        /* steam_mock_hooks.c — tests only */
+#endif
 
 /* steam_net.c */
 PHP_FUNCTION(steam_net_init_relay_network_access);
@@ -59,6 +85,12 @@ PHP_FUNCTION(steam_net_accept_connection);
 PHP_FUNCTION(steam_net_close_connection);
 PHP_FUNCTION(steam_net_send_message);
 PHP_FUNCTION(steam_net_receive_messages);
+PHP_FUNCTION(steam_net_close_listen_socket);
+PHP_FUNCTION(steam_net_create_poll_group);
+PHP_FUNCTION(steam_net_destroy_poll_group);
+PHP_FUNCTION(steam_net_set_connection_poll_group);
+PHP_FUNCTION(steam_net_receive_messages_on_poll_group);
+PHP_FUNCTION(steam_net_get_connection_status);
 
 /* steam_init.c */
 PHP_FUNCTION(steam_init);
@@ -87,6 +119,10 @@ PHP_FUNCTION(steam_friends_get_friend_persona_state);
 PHP_FUNCTION(steam_friends_get_friend_persona_name);
 PHP_FUNCTION(steam_friends_request_user_information);
 PHP_FUNCTION(steam_friends_get_friend_avatar);
+PHP_FUNCTION(steam_friends_invite_user_to_game);
+PHP_FUNCTION(steam_friends_activate_invite_dialog_connect_string);
+PHP_FUNCTION(steam_friends_get_friend_rich_presence);
+PHP_FUNCTION(steam_friends_get_friend_game_played);
 
 /* steam_stats.c */
 PHP_FUNCTION(steam_stats_set_achievement);
@@ -133,6 +169,7 @@ PHP_FUNCTION(steam_apps_get_earliest_purchase_time);
 PHP_FUNCTION(steam_apps_get_installed_depots);
 PHP_FUNCTION(steam_apps_get_dlc_count);
 PHP_FUNCTION(steam_apps_get_app_build_id);
+PHP_FUNCTION(steam_apps_get_launch_command_line);
 
 /* steam_utils.c */
 PHP_FUNCTION(steam_utils_get_app_id);

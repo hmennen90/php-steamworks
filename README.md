@@ -83,7 +83,7 @@ steam_shutdown();
 
 ## Available Functions
 
-121 functions across 10 Steamworks interfaces. Full signatures with docblocks live in
+150 functions across 11 Steamworks interfaces. Full signatures with docblocks live in
 [`stubs/steamworks.php`](stubs/steamworks.php) (IDE autocompletion).
 
 ### Core
@@ -115,6 +115,12 @@ steam_shutdown();
 - `steam_friends_get_friend_persona_name(int $steam_id): string|false`
 - `steam_friends_request_user_information(int $steam_id, bool $name_only = false): bool`
 - `steam_friends_get_friend_avatar(int $steam_id, int $size = STEAM_AVATAR_MEDIUM): ?array` — RGBA pixels
+- `steam_friends_invite_user_to_game(int $friend_id, string $connect): bool` — invite into the running game; the connect string (1–255 bytes) arrives at the friend's game
+- `steam_friends_activate_invite_dialog_connect_string(string $connect): bool` — overlay invite dialog
+- `steam_friends_activate_overlay_invite_dialog(int $lobby): bool` — overlay invite dialog for a lobby
+- `steam_friends_get_friend_rich_presence(int $friend_id, string $key): string|false` — '' for a key not set
+- `steam_friends_get_friend_game_played(int $friend_id): array|false` — ['game_id', 'app_id', 'ip', 'port', 'query_port', 'lobby'], false if not in a game
+- `steam_friends_get_join_requests(): array` — friends who accepted an invite or clicked "Join": [['friend' => int, 'connect' => string], ...], drains the queue
 
 ### Stats & Achievements
 - `steam_stats_set_achievement(string $id): bool`
@@ -169,6 +175,7 @@ A cloud file shared with `steam_remote_file_share` gets a UGC handle that can be
 - `steam_apps_get_installed_depots(int $app_id): array|false`
 - `steam_apps_get_dlc_count(): int|false`
 - `steam_apps_get_app_build_id(): int|false`
+- `steam_apps_get_launch_command_line(): string|false` — the line Steam started the game with, e.g. after an accepted invite
 
 ### Utils
 - `steam_utils_get_app_id(): int|false`
@@ -233,7 +240,25 @@ Subscribe/unsubscribe, create, submit and delete are async (poll `steam_get_call
 - `steam_net_close_connection(int $connection, int $reason = 0, ?string $debug = null, bool $linger = false): bool`
 - `steam_net_send_message(int $connection, string $data, bool $reliable = true): int|false`
 - `steam_net_receive_messages(int $connection, int $max = 32): array|false`
-- `steam_net_get_connection_events(): array` — connection state changes since the last call
+- `steam_net_get_connection_events(): array` — connection state changes since the last call; listen_socket names the socket an incoming connection arrived on (0 for outgoing)
+- `steam_net_close_listen_socket(int $socket): bool`
+- `steam_net_create_poll_group(): int|false` / `steam_net_destroy_poll_group(int $group): bool`
+- `steam_net_set_connection_poll_group(int $connection, int $group): bool`
+- `steam_net_receive_messages_on_poll_group(int $group, int $max = 32): array|false` — all connections of a group in one call
+- `steam_net_get_connection_status(int $connection): array|false` — ping, quality_local/quality_remote (0–1), byte and packet rates, pending bytes, queue time
+
+### Lobbies (Matchmaking)
+Creating and joining are async (poll `steam_get_call_result` → lobby_created / lobby_entered); everything that happens in the lobby afterwards arrives through `steam_matchmaking_get_events()`.
+- `steam_matchmaking_create_lobby(int $type, int $max_members): int|false` — STEAM_LOBBY_TYPE_*
+- `steam_matchmaking_join_lobby(int $lobby): int|false` / `steam_matchmaking_leave_lobby(int $lobby): bool`
+- `steam_matchmaking_invite_user_to_lobby(int $lobby, int $user): bool`
+- `steam_matchmaking_get_num_lobby_members(int $lobby): int|false` / `steam_matchmaking_get_lobby_member_by_index(int $lobby, int $index): int|false`
+- `steam_matchmaking_get_lobby_owner(int $lobby): int|false` / `steam_matchmaking_set_lobby_owner(int $lobby, int $owner): bool`
+- `steam_matchmaking_get_lobby_data(int $lobby, string $key): string|false` / `steam_matchmaking_set_lobby_data(int $lobby, string $key, string $value): bool` — keys up to 255 characters, values under 8192 bytes
+- `steam_matchmaking_get_lobby_member_data(int $lobby, int $user, string $key): string|false` / `steam_matchmaking_set_lobby_member_data(int $lobby, string $key, string $value): bool`
+- `steam_matchmaking_set_lobby_joinable(int $lobby, bool $joinable): bool` / `steam_matchmaking_set_lobby_type(int $lobby, int $type): bool`
+- `steam_matchmaking_send_lobby_chat_msg(int $lobby, string $message): bool` — 1–4096 bytes, binary-safe
+- `steam_matchmaking_get_events(): array` — in arrival order, drains the queue: join_requested (lobby, friend), data_update (lobby, member, success), chat_update (lobby, user, changed_by, state = STEAM_CHAT_MEMBER_STATE_* bits), chat_message (lobby, user, entry_type, message)
 
 ## Leaderboards & async calls
 
@@ -263,6 +288,10 @@ See [`examples/leaderboard.php`](examples/leaderboard.php) for a full round-trip
 - Download: `STEAM_LEADERBOARD_DATA_GLOBAL`, `STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER`, `STEAM_LEADERBOARD_DATA_FRIENDS`
 - Hardware type: `STEAM_HARDWARE_TYPE_NONE`, `STEAM_HARDWARE_TYPE_STEAM_DECK`, `STEAM_HARDWARE_TYPE_STEAM_MACHINE`, `STEAM_HARDWARE_TYPE_STEAM_FRAME`
 - Hardware preset: `STEAM_HARDWARE_CONFIG_NONE`, `..._LOW`, `..._MEDIUM`, `..._HIGH`, `..._MAX`, `..._STEAM_DECK`, `..._STEAM_MACHINE`, `..._STEAM_FRAME`
+- Shared files: `STEAM_UGC_HANDLE_INVALID` (-1, a leaderboard entry without an attached file)
+- Lobby type: `STEAM_LOBBY_TYPE_PRIVATE`, `..._FRIENDS_ONLY`, `..._PUBLIC`, `..._INVISIBLE`, `..._PRIVATE_UNIQUE`
+- Lobby member change (bits): `STEAM_CHAT_MEMBER_STATE_ENTERED`, `..._LEFT`, `..._DISCONNECTED`, `..._KICKED`, `..._BANNED`
+- Lobby entry and chat: `STEAM_CHAT_ROOM_ENTER_SUCCESS`, `STEAM_CHAT_ENTRY_TYPE_CHAT_MSG`
 
 ## SDK compatibility
 

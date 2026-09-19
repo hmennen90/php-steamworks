@@ -36,6 +36,7 @@ typedef struct {
 } SteamParamStringArray_t;
 typedef uint32_t HSteamNetConnection;
 typedef uint32_t HSteamListenSocket;
+typedef uint32_t HSteamNetPollGroup;
 
 typedef void ISteamUser;
 typedef void ISteamFriends;
@@ -47,5 +48,6 @@ typedef void ISteamUGC;
 typedef void ISteamTimeline;
 typedef void ISteamNetworkingSockets;
 typedef void ISteamNetworkingUtils;
+typedef void ISteamMatchmaking;
 
 #endif /* STEAM_API_H */

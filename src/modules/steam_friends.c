@@ -1,5 +1,6 @@
 #include "../php_steamworks.h"
 #include "../steam_iface.h"
+#include <string.h>
 
 PHP_FUNCTION(steam_friends_get_name)
 {
@@ -254,4 +255,108 @@ PHP_FUNCTION(steam_friends_get_friend_avatar)
     add_assoc_long(return_value, "width",  (zend_long)width);
     add_assoc_long(return_value, "height", (zend_long)height);
     add_assoc_str(return_value, "rgba", buf); /* raw RGBA8888, width*height*4 bytes */
+}
+
+/* ── Invites and joins over rich presence (Phase 4b) ─────────────────────────
+ * The inviting game sets the rich presence key "connect". A friend who accepts
+ * an invite or clicks "Join" makes Steam post GameRichPresenceJoinRequested_t to
+ * that friend's game (drain with steam_friends_get_join_requests); a game that
+ * was not running is started with the string on its command line instead
+ * (steam_apps_get_launch_command_line). */
+
+PHP_FUNCTION(steam_friends_invite_user_to_game)
+{
+    zend_long    friend_id;
+    zend_string *connect;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(friend_id)
+        Z_PARAM_STR(connect)
+    ZEND_PARSE_PARAMETERS_END();
+
+    if (ZSTR_LEN(connect) == 0 || ZSTR_LEN(connect) >= k_cchMaxRichPresenceValueLength) {
+        php_error_docref(NULL, E_WARNING, "Connect string must be 1 to %d bytes",
+            k_cchMaxRichPresenceValueLength - 1);
+        RETURN_FALSE;
+    }
+
+    ISteamFriends *friends = steamworks_friends();
+    if (!friends) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    RETURN_BOOL(SteamAPI_ISteamFriends_InviteUserToGame(
+        friends, (uint64_steamid)friend_id, ZSTR_VAL(connect)));
+}
+
+PHP_FUNCTION(steam_friends_activate_invite_dialog_connect_string)
+{
+    zend_string *connect;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STR(connect)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamFriends *friends = steamworks_friends();
+    if (!friends) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* Overlay invite dialog; every friend picked there gets the connect string. */
+    SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString(friends, ZSTR_VAL(connect));
+    RETURN_TRUE;
+}
+
+PHP_FUNCTION(steam_friends_get_friend_rich_presence)
+{
+    zend_long    friend_id;
+    zend_string *key;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(friend_id)
+        Z_PARAM_STR(key)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamFriends *friends = steamworks_friends();
+    if (!friends) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* '' for a key the friend has not set. Only available for friends, or for
+       users in the same lobby / game. */
+    const char *value = SteamAPI_ISteamFriends_GetFriendRichPresence(
+        friends, (uint64_steamid)friend_id, ZSTR_VAL(key));
+    RETURN_STRING(value ? value : "");
+}
+
+PHP_FUNCTION(steam_friends_get_friend_game_played)
+{
+    zend_long friend_id;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(friend_id)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamFriends *friends = steamworks_friends();
+    if (!friends) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    FriendGameInfo_t info;
+    memset(&info, 0, sizeof(info));
+    if (!SteamAPI_ISteamFriends_GetFriendGamePlayed(friends, (uint64_steamid)friend_id, &info)) {
+        RETURN_FALSE; /* not in a game */
+    }
+
+    array_init(return_value);
+    add_assoc_long(return_value, "game_id",    (zend_long)info.m_gameID);
+    add_assoc_long(return_value, "app_id",     (zend_long)(info.m_gameID & 0xFFFFFF));
+    add_assoc_long(return_value, "ip",         (zend_long)info.m_unGameIP);
+    add_assoc_long(return_value, "port",       (zend_long)info.m_usGamePort);
+    add_assoc_long(return_value, "query_port", (zend_long)info.m_usQueryPort);
+    add_assoc_long(return_value, "lobby",      (zend_long)info.m_steamIDLobby);
 }

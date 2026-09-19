@@ -21,5 +21,6 @@ ISteamTimeline          *steamworks_timeline(void);
 ISteamUGC               *steamworks_ugc(void);
 ISteamNetworkingSockets *steamworks_net(void);
 ISteamNetworkingUtils   *steamworks_net_utils(void);
+ISteamMatchmaking       *steamworks_matchmaking(void);
 
 #endif /* STEAM_IFACE_H */

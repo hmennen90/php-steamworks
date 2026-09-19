@@ -18,8 +18,97 @@ ESteamAPIInitResult SteamAPI_InitFlat(SteamErrMsg *pOutErrMsg) {
 }
 void SteamAPI_Shutdown(void) { }
 void SteamAPI_RunCallbacks(void) { }
-void SteamAPI_RegisterCallback(void *callback, int iCallback) { }
-void SteamAPI_UnregisterCallback(void *callback) { }
+/* Registered callbacks, so the test hooks below can deliver to them. */
+#define MOCK_MAX_CALLBACKS 32
+static struct { void *cb; int id; } mock_callbacks[MOCK_MAX_CALLBACKS];
+static int mock_callback_count = 0;
+
+void SteamAPI_RegisterCallback(void *callback, int iCallback) {
+    if (mock_callback_count < MOCK_MAX_CALLBACKS) {
+        mock_callbacks[mock_callback_count].cb = callback;
+        mock_callbacks[mock_callback_count].id = iCallback;
+        mock_callback_count++;
+    }
+}
+void SteamAPI_UnregisterCallback(void *callback) {
+    for (int i = 0; i < mock_callback_count; i++) {
+        if (mock_callbacks[i].cb == callback) {
+            mock_callbacks[i] = mock_callbacks[--mock_callback_count];
+            return;
+        }
+    }
+}
+
+/* Deliver like SteamAPI_RunCallbacks: CCallbackBase's first vtable slot is
+   Run(this, pvParam). */
+typedef void (*mock_run_fn)(void *self, void *param);
+static void mock_dispatch(int id, void *param) {
+    for (int i = 0; i < mock_callback_count; i++) {
+        if (mock_callbacks[i].id == id) {
+            mock_run_fn run = (*(mock_run_fn **)mock_callbacks[i].cb)[0];
+            run(mock_callbacks[i].cb, param);
+        }
+    }
+}
+
+void SteamMock_FireRichPresenceJoinRequested(uint64_t friend_id, const char *connect) {
+    GameRichPresenceJoinRequested_t r;
+    memset(&r, 0, sizeof(r));
+    r.m_steamIDFriend = friend_id;
+    snprintf(r.m_rgchConnect, sizeof(r.m_rgchConnect), "%s", connect ? connect : "");
+    mock_dispatch(k_iCallback_GameRichPresenceJoinRequested, &r);
+}
+
+void SteamMock_FireLobbyJoinRequested(uint64_t lobby, uint64_t friend_id) {
+    GameLobbyJoinRequested_t r;
+    memset(&r, 0, sizeof(r));
+    r.m_steamIDLobby  = lobby;
+    r.m_steamIDFriend = friend_id;
+    mock_dispatch(k_iCallback_GameLobbyJoinRequested, &r);
+}
+
+void SteamMock_FireLobbyDataUpdate(uint64_t lobby, uint64_t member, bool success) {
+    LobbyDataUpdate_t r;
+    memset(&r, 0, sizeof(r));
+    r.m_ulSteamIDLobby  = lobby;
+    r.m_ulSteamIDMember = member;
+    r.m_bSuccess        = success ? 1 : 0;
+    mock_dispatch(k_iCallback_LobbyDataUpdate, &r);
+}
+
+void SteamMock_FireLobbyChatUpdate(uint64_t lobby, uint64_t user, uint64_t changed_by, uint32 state) {
+    LobbyChatUpdate_t r;
+    memset(&r, 0, sizeof(r));
+    r.m_ulSteamIDLobby           = lobby;
+    r.m_ulSteamIDUserChanged     = user;
+    r.m_ulSteamIDMakingChange    = changed_by;
+    r.m_rgfChatMemberStateChange = state;
+    mock_dispatch(k_iCallback_LobbyChatUpdate, &r);
+}
+
+/* Lobby chat: messages are stored by chat id, the callback carries only the id
+   and GetLobbyChatEntry reads the bytes back — as with Steam. */
+#define MOCK_CHAT_SLOTS 16
+static struct { uint64_t user; int len; char data[4096]; } mock_chat[MOCK_CHAT_SLOTS];
+static uint32 mock_chat_next = 0;
+
+void SteamMock_FireLobbyChatMsg(uint64_t lobby, uint64_t user, const char *message, int len) {
+    uint32 id = mock_chat_next++;
+    int slot = (int)(id % MOCK_CHAT_SLOTS);
+    if (len < 0) { len = 0; }
+    if (len > (int)sizeof(mock_chat[slot].data)) { len = (int)sizeof(mock_chat[slot].data); }
+    mock_chat[slot].user = user;
+    mock_chat[slot].len  = len;
+    if (len > 0) { memcpy(mock_chat[slot].data, message, (size_t)len); }
+
+    LobbyChatMsg_t r;
+    memset(&r, 0, sizeof(r));
+    r.m_ulSteamIDLobby = lobby;
+    r.m_ulSteamIDUser  = user;
+    r.m_eChatEntryType = 1; /* k_EChatEntryTypeChatMsg */
+    r.m_iChatID        = id;
+    mock_dispatch(k_iCallback_LobbyChatMsg, &r);
+}
 
 /*
  * Runtime interface lookup.
@@ -47,6 +136,7 @@ static const char *const mock_offered[] = {
     "STEAMUGC_INTERFACE_VERSION021",
     "SteamNetworkingSockets013",
     "SteamNetworkingUtils004",
+    "SteamMatchMaking009",
     NULL
 };
 
@@ -126,6 +216,29 @@ int         SteamAPI_ISteamFriends_GetSmallFriendAvatar(ISteamFriends *self, uin
 int         SteamAPI_ISteamFriends_GetMediumFriendAvatar(ISteamFriends *self, uint64_steamid steam_id) { return 5; }
 int         SteamAPI_ISteamFriends_GetLargeFriendAvatar(ISteamFriends *self, uint64_steamid steam_id) { return 5; }
 bool        SteamAPI_ISteamFriends_RequestUserInformation(ISteamFriends *self, uint64_steamid steam_id, bool require_name_only) { return false; } /* already available */
+
+/* Invites and joins. Friend ...729 plays app 480 in lobby 109775240910000001
+   and advertises it as rich presence "connect"; everyone else is offline. */
+#define MOCK_FRIEND_IN_GAME 76561197960265729ULL
+#define MOCK_LOBBY          109775240910000001ULL
+bool SteamAPI_ISteamFriends_InviteUserToGame(ISteamFriends *self, uint64_steamid friend_id, const char *connect) {
+    return connect != NULL && connect[0] != '\0';
+}
+void SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString(ISteamFriends *self, const char *connect) { }
+const char *SteamAPI_ISteamFriends_GetFriendRichPresence(ISteamFriends *self, uint64_steamid friend_id, const char *key) {
+    if (friend_id == MOCK_FRIEND_IN_GAME && key && strcmp(key, "connect") == 0) {
+        return "+connect_lobby 109775240910000001";
+    }
+    return "";
+}
+bool SteamAPI_ISteamFriends_GetFriendGamePlayed(ISteamFriends *self, uint64_steamid friend_id, FriendGameInfo_t *info) {
+    if (friend_id != MOCK_FRIEND_IN_GAME || !info) { return false; }
+    memset(info, 0, sizeof(*info));
+    info->m_gameID       = 480;
+    info->m_usQueryPort  = 0xFFFF; /* k_usFriendGameInfoQueryPort_NotInitialized */
+    info->m_steamIDLobby = MOCK_LOBBY;
+    return true;
+}
 
 /* ISteamUserStats */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name)   { return false; }
@@ -224,6 +337,12 @@ uint32         SteamAPI_ISteamApps_GetInstalledDepots(ISteamApps *self, AppId_t 
 }
 int            SteamAPI_ISteamApps_GetDLCCount(ISteamApps *self) { return 0; }
 int            SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self) { return 10; }
+/* Started through an accepted invite. */
+int            SteamAPI_ISteamApps_GetLaunchCommandLine(ISteamApps *self, char *command_line, int size) {
+    return command_line && size > 0
+        ? snprintf(command_line, (size_t)size, "%s", "+connect_lobby 109775240910000001")
+        : 0;
+}
 
 /* ISteamUtils */
 AppId_t     SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self) { return 480; }
@@ -337,6 +456,22 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
         r->m_ulSteamIDOwner = 76561197960265728ULL;
         return true;
     }
+    if (callback_expected == k_iCallback_LobbyCreated
+        && callback_size >= (int)sizeof(LobbyCreated_t)) {
+        LobbyCreated_t *r = (LobbyCreated_t *)callback;
+        r->m_eResult        = 1;
+        r->m_ulSteamIDLobby = MOCK_LOBBY;
+        return true;
+    }
+    if (callback_expected == k_iCallback_LobbyEnter
+        && callback_size >= (int)sizeof(LobbyEnter_t)) {
+        LobbyEnter_t *r = (LobbyEnter_t *)callback;
+        r->m_ulSteamIDLobby         = MOCK_LOBBY;
+        r->m_rgfChatPermissions     = 0;
+        r->m_bLocked                = 0;
+        r->m_EChatRoomEnterResponse = 1; /* k_EChatRoomEnterResponseSuccess */
+        return true;
+    }
     if (callback_expected == k_iCallback_LeaderboardUGCSet
         && callback_size >= (int)sizeof(LeaderboardUGCSet_t)) {
         LeaderboardUGCSet_t *r = (LeaderboardUGCSet_t *)callback;
@@ -346,6 +481,75 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
     }
     return false;
 }
+
+/* ISteamMatchmaking — lobby 109775240910000001, owned by the local user
+ * 76561197960265728, with friend 76561197960265729 as second member.
+ * Handles: 20 = create lobby, 21 = join lobby. */
+#define MOCK_ME 76561197960265728ULL
+#define MOCK_KV_SLOTS 16
+typedef struct { uint64_t user; char key[256]; char value[8192]; } mock_kv;
+static mock_kv mock_lobby_data[MOCK_KV_SLOTS];
+static mock_kv mock_member_data[MOCK_KV_SLOTS];
+
+static const char *mock_kv_get(mock_kv *table, uint64_t user, const char *key) {
+    for (int i = 0; i < MOCK_KV_SLOTS; i++) {
+        if (table[i].key[0] && table[i].user == user && strcmp(table[i].key, key) == 0) {
+            return table[i].value;
+        }
+    }
+    return "";
+}
+static bool mock_kv_set(mock_kv *table, uint64_t user, const char *key, const char *value) {
+    int free_slot = -1;
+    for (int i = 0; i < MOCK_KV_SLOTS; i++) {
+        if (table[i].key[0] && table[i].user == user && strcmp(table[i].key, key) == 0) {
+            snprintf(table[i].value, sizeof(table[i].value), "%s", value);
+            return true;
+        }
+        if (!table[i].key[0] && free_slot < 0) { free_slot = i; }
+    }
+    if (free_slot < 0) { return false; }
+    table[free_slot].user = user;
+    snprintf(table[free_slot].key, sizeof(table[free_slot].key), "%s", key);
+    snprintf(table[free_slot].value, sizeof(table[free_slot].value), "%s", value);
+    return true;
+}
+
+SteamAPICall_t SteamAPI_ISteamMatchmaking_CreateLobby(ISteamMatchmaking *self, int lobby_type, int max_members) { return 20; }
+SteamAPICall_t SteamAPI_ISteamMatchmaking_JoinLobby(ISteamMatchmaking *self, uint64_steamid lobby) { return 21; }
+void           SteamAPI_ISteamMatchmaking_LeaveLobby(ISteamMatchmaking *self, uint64_steamid lobby) { }
+bool           SteamAPI_ISteamMatchmaking_InviteUserToLobby(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid invitee) { return true; }
+int            SteamAPI_ISteamMatchmaking_GetNumLobbyMembers(ISteamMatchmaking *self, uint64_steamid lobby) { return lobby == MOCK_LOBBY ? 2 : 0; }
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyMemberByIndex(ISteamMatchmaking *self, uint64_steamid lobby, int member) {
+    if (lobby != MOCK_LOBBY) { return 0; }
+    return member == 0 ? MOCK_ME : member == 1 ? MOCK_FRIEND_IN_GAME : 0;
+}
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key) {
+    return mock_kv_get(mock_lobby_data, lobby, key);
+}
+bool           SteamAPI_ISteamMatchmaking_SetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value) {
+    return mock_kv_set(mock_lobby_data, lobby, key, value);
+}
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid user, const char *key) {
+    return mock_kv_get(mock_member_data, user, key);
+}
+void           SteamAPI_ISteamMatchmaking_SetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value) {
+    mock_kv_set(mock_member_data, MOCK_ME, key, value);
+}
+bool           SteamAPI_ISteamMatchmaking_SendLobbyChatMsg(ISteamMatchmaking *self, uint64_steamid lobby, const void *body, int size) { return size > 0; }
+int            SteamAPI_ISteamMatchmaking_GetLobbyChatEntry(ISteamMatchmaking *self, uint64_steamid lobby, int chat_id, uint64_steamid *user, void *data, int size, int *entry_type) {
+    int slot = chat_id % MOCK_CHAT_SLOTS;
+    int n = mock_chat[slot].len < size ? mock_chat[slot].len : size;
+    if (user)       { *user = mock_chat[slot].user; }
+    if (entry_type) { *entry_type = 1; }
+    if (data && n > 0) { memcpy(data, mock_chat[slot].data, (size_t)n); }
+    return n;
+}
+bool           SteamAPI_ISteamMatchmaking_SetLobbyJoinable(ISteamMatchmaking *self, uint64_steamid lobby, bool joinable) { return lobby == MOCK_LOBBY; }
+bool           SteamAPI_ISteamMatchmaking_SetLobbyType(ISteamMatchmaking *self, uint64_steamid lobby, int lobby_type) { return lobby == MOCK_LOBBY; }
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby) { return lobby == MOCK_LOBBY ? MOCK_ME : 0; }
+bool           SteamAPI_ISteamMatchmaking_SetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid new_owner) { return lobby == MOCK_LOBBY; }
+void           SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialog(ISteamFriends *self, uint64_steamid lobby) { }
 
 /* ISteamTimeline — accessor + no-op annotations. Async "does...exist" calls
  * return deterministic fake handles (10 = event, 11 = game phase). */
@@ -423,6 +627,85 @@ bool SteamAPI_ISteamNetworkingSockets_CloseConnection(ISteamNetworkingSockets *s
 int  SteamAPI_ISteamNetworkingSockets_SendMessageToConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, const void *data, uint32 cb_data, int send_flags, int64_t *out_message_number) { if (out_message_number) { *out_message_number = 1; } return 1; }
 int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, void **out_messages, int max_messages) { return 0; }
 void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils *self) { }
-void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id) { }
-uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity) { return 0; }
+/* SteamNetworkingIdentity: m_eType (int32) at 0, m_cbSize at 4, m_steamID64 at 8. */
+void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id) {
+    if (identity) {
+        int32 type = 16; /* k_ESteamNetworkingIdentityType_SteamID */
+        memcpy(identity, &type, sizeof(type));
+        memcpy((unsigned char *)identity + 8, &steam_id, sizeof(steam_id));
+    }
+}
+uint64_steamid SteamAPI_SteamNetworkingIdentity_GetSteamID64(void *identity) {
+    uint64_steamid id = 0;
+    if (identity) { memcpy(&id, (unsigned char *)identity + 8, sizeof(id)); }
+    return id;
+}
+
+/* Phase 4d. Poll group 40 holds connection 31, which has one message waiting:
+   "hello" from friend ...729, reliable, message number 7. The message is laid
+   out like SteamNetworkingMessage_t (same offsets under both packings). */
+static unsigned char mock_net_message[256];
+static char mock_net_payload[] = "hello";
+bool SteamAPI_ISteamNetworkingSockets_CloseListenSocket(ISteamNetworkingSockets *self, HSteamListenSocket socket) { return socket == 30; }
+HSteamNetPollGroup SteamAPI_ISteamNetworkingSockets_CreatePollGroup(ISteamNetworkingSockets *self) { return 40; }
+bool SteamAPI_ISteamNetworkingSockets_DestroyPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group) { return group == 40; }
+bool SteamAPI_ISteamNetworkingSockets_SetConnectionPollGroup(ISteamNetworkingSockets *self, HSteamNetConnection conn, HSteamNetPollGroup group) { return true; }
+int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group, void **out_messages, int max_messages) {
+    if (group != 40 || max_messages < 1 || !out_messages) { return 0; }
+    void    *data   = mock_net_payload;
+    int      size   = 5;
+    uint32   conn   = 31;
+    int64_t  number = 7;
+    int      flags  = 8; /* k_nSteamNetworkingSend_Reliable */
+    memset(mock_net_message, 0, sizeof(mock_net_message));
+    memcpy(mock_net_message + 0,   &data,   sizeof(data));
+    memcpy(mock_net_message + 8,   &size,   sizeof(size));
+    memcpy(mock_net_message + 12,  &conn,   sizeof(conn));
+    SteamAPI_SteamNetworkingIdentity_SetSteamID64(mock_net_message + 16, MOCK_FRIEND_IN_GAME);
+    memcpy(mock_net_message + 168, &number, sizeof(number));
+    memcpy(mock_net_message + 196, &flags,  sizeof(flags));
+    out_messages[0] = mock_net_message;
+    return 1;
+}
+int  SteamAPI_ISteamNetworkingSockets_GetConnectionRealTimeStatus(ISteamNetworkingSockets *self, HSteamNetConnection conn, void *status, int lanes, void *lane_status) {
+    if (conn != 31 || !status) { return 3; /* k_EResultNoConnection */ }
+    /* SteamNetConnectionRealTimeStatus_t offsets, measured against SDK 1.64. */
+    unsigned char *s = status;
+    int32 state = 3, ping = 42, send_rate = 256000, pending_unrel = 0, pending_rel = 64, unacked = 0;
+    float q_local = 0.95f, q_remote = 0.9f, out_pps = 10.0f, out_bps = 1200.0f, in_pps = 8.0f, in_bps = 800.0f;
+    int64_t queue = 1500;
+    memset(s, 0, 120);
+    memcpy(s + 0,  &state, 4);     memcpy(s + 4,  &ping, 4);
+    memcpy(s + 8,  &q_local, 4);   memcpy(s + 12, &q_remote, 4);
+    memcpy(s + 16, &out_pps, 4);   memcpy(s + 20, &out_bps, 4);
+    memcpy(s + 24, &in_pps, 4);    memcpy(s + 28, &in_bps, 4);
+    memcpy(s + 32, &send_rate, 4); memcpy(s + 36, &pending_unrel, 4);
+    memcpy(s + 40, &pending_rel, 4); memcpy(s + 44, &unacked, 4);
+    memcpy(s + 48, &queue, 8);
+    return 1; /* k_EResultOK */
+}
+
+/* SteamNetConnectionStatusChangedCallback_t as Steam lays it out on this
+   platform (measured against SDK 1.64): m_info starts at 8 under pack(8)
+   (Windows) and at 4 under pack(4) (Linux/macOS). Deliberately NOT taken from
+   src/steam_api_c.h — the test must catch the extension reading wrong offsets. */
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#define MOCK_NETCB_INFO 4
+#define MOCK_NETCB_OLD  700
+#define MOCK_NETCB_SIZE 704
+#else
+#define MOCK_NETCB_INFO 8
+#define MOCK_NETCB_OLD  704
+#define MOCK_NETCB_SIZE 712
+#endif
+void SteamMock_FireNetConnectionStatus(uint32 conn, uint64_t peer, uint32 listen_socket, int32 state, int32 old_state) {
+    unsigned char cb[MOCK_NETCB_SIZE];
+    memset(cb, 0, sizeof(cb));
+    memcpy(cb + 0, &conn, sizeof(conn));
+    SteamAPI_SteamNetworkingIdentity_SetSteamID64(cb + MOCK_NETCB_INFO, peer);   /* m_info.m_identityRemote */
+    memcpy(cb + MOCK_NETCB_INFO + 144, &listen_socket, sizeof(listen_socket));  /* m_info.m_hListenSocket */
+    memcpy(cb + MOCK_NETCB_INFO + 176, &state, sizeof(state));                  /* m_info.m_eState */
+    memcpy(cb + MOCK_NETCB_OLD, &old_state, sizeof(old_state));                 /* m_eOldState */
+    mock_dispatch(k_iCallback_SteamNetConnectionStatusChanged, cb);
+}
 void SteamAPI_SteamNetworkingMessage_t_Release(void *message) { }

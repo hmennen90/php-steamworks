@@ -110,6 +110,30 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_string, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+#ifdef STEAMWORKS_MOCK
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_mock_fire, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, args, IS_ARRAY, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lobby_set_data, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, lobby, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, key, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_lobby_get_member_data, 0, 0, 3)
+    ZEND_ARG_TYPE_INFO(0, lobby, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, user, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, key, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_bool, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, handle, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, flag, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_ugc_read, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, ugc, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, size, IS_LONG, 0)
@@ -229,6 +253,11 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_friends_get_friend_persona_name, arginfo_steam_one_long)
     PHP_FE(steam_friends_request_user_information, arginfo_steam_long_optional_bool)
     PHP_FE(steam_friends_get_friend_avatar, arginfo_steam_long_optional_long)
+    PHP_FE(steam_friends_invite_user_to_game, arginfo_steam_long_string)
+    PHP_FE(steam_friends_activate_invite_dialog_connect_string, arginfo_steam_one_string)
+    PHP_FE(steam_friends_get_friend_rich_presence, arginfo_steam_long_string)
+    PHP_FE(steam_friends_get_friend_game_played, arginfo_steam_one_long)
+    PHP_FE(steam_friends_get_join_requests, arginfo_steam_void)
 
     /* steam_stats.c */
     PHP_FE(steam_stats_set_achievement,     arginfo_steam_one_string)
@@ -278,6 +307,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_apps_get_installed_depots, arginfo_steam_one_long)
     PHP_FE(steam_apps_get_dlc_count,        arginfo_steam_void)
     PHP_FE(steam_apps_get_app_build_id,     arginfo_steam_void)
+    PHP_FE(steam_apps_get_launch_command_line, arginfo_steam_void)
 
     /* steam_utils.c */
     PHP_FE(steam_utils_get_app_id,          arginfo_steam_void)
@@ -343,6 +373,36 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_net_close_connection,      arginfo_steam_net_close)
     PHP_FE(steam_net_send_message,          arginfo_steam_net_send)
     PHP_FE(steam_net_receive_messages,      arginfo_steam_long_optional_long)
+    PHP_FE(steam_net_close_listen_socket,   arginfo_steam_one_long)
+    PHP_FE(steam_net_create_poll_group,     arginfo_steam_void)
+    PHP_FE(steam_net_destroy_poll_group,    arginfo_steam_one_long)
+    PHP_FE(steam_net_set_connection_poll_group, arginfo_steam_two_longs)
+    PHP_FE(steam_net_receive_messages_on_poll_group, arginfo_steam_long_optional_long)
+    PHP_FE(steam_net_get_connection_status, arginfo_steam_one_long)
+
+    /* steam_matchmaking.c — lobbies */
+    PHP_FE(steam_matchmaking_create_lobby,  arginfo_steam_two_longs)
+    PHP_FE(steam_matchmaking_join_lobby,    arginfo_steam_one_long)
+    PHP_FE(steam_matchmaking_leave_lobby,   arginfo_steam_one_long)
+    PHP_FE(steam_matchmaking_invite_user_to_lobby, arginfo_steam_two_longs)
+    PHP_FE(steam_matchmaking_get_num_lobby_members, arginfo_steam_one_long)
+    PHP_FE(steam_matchmaking_get_lobby_member_by_index, arginfo_steam_two_longs)
+    PHP_FE(steam_matchmaking_get_lobby_owner, arginfo_steam_one_long)
+    PHP_FE(steam_matchmaking_set_lobby_owner, arginfo_steam_two_longs)
+    PHP_FE(steam_matchmaking_get_lobby_data, arginfo_steam_long_string)
+    PHP_FE(steam_matchmaking_set_lobby_data, arginfo_steam_lobby_set_data)
+    PHP_FE(steam_matchmaking_get_lobby_member_data, arginfo_steam_lobby_get_member_data)
+    PHP_FE(steam_matchmaking_set_lobby_member_data, arginfo_steam_lobby_set_data)
+    PHP_FE(steam_matchmaking_set_lobby_joinable, arginfo_steam_long_bool)
+    PHP_FE(steam_matchmaking_set_lobby_type, arginfo_steam_two_longs)
+    PHP_FE(steam_matchmaking_send_lobby_chat_msg, arginfo_steam_long_string)
+    PHP_FE(steam_matchmaking_get_events,    arginfo_steam_void)
+    PHP_FE(steam_friends_activate_overlay_invite_dialog, arginfo_steam_one_long)
+
+#ifdef STEAMWORKS_MOCK
+    /* steam_mock_hooks.c — test hook, mock builds only */
+    PHP_FE(steam_mock_fire_callback,        arginfo_steam_mock_fire)
+#endif
 
     PHP_FE_END
 };
@@ -397,6 +457,21 @@ PHP_MINIT_FUNCTION(steamworks)
     /* A leaderboard entry without an attached file carries k_UGCHandleInvalid
        (all bits set), which reads as -1 as a PHP int. */
     REGISTER_LONG_CONSTANT("STEAM_UGC_HANDLE_INVALID", -1, CONST_CS | CONST_PERSISTENT);
+
+    /* Lobbies (ELobbyType, EChatMemberStateChange, EChatRoomEnterResponse,
+       EChatEntryType — values from SDK 1.64 isteammatchmaking.h / steamclientpublic.h). */
+    REGISTER_LONG_CONSTANT("STEAM_LOBBY_TYPE_PRIVATE",        0, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LOBBY_TYPE_FRIENDS_ONLY",   1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LOBBY_TYPE_PUBLIC",         2, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LOBBY_TYPE_INVISIBLE",      3, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_LOBBY_TYPE_PRIVATE_UNIQUE", 4, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_MEMBER_STATE_ENTERED",      0x01, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_MEMBER_STATE_LEFT",         0x02, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_MEMBER_STATE_DISCONNECTED", 0x04, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_MEMBER_STATE_KICKED",       0x08, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_MEMBER_STATE_BANNED",       0x10, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_ROOM_ENTER_SUCCESS",   1, CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("STEAM_CHAT_ENTRY_TYPE_CHAT_MSG",  1, CONST_CS | CONST_PERSISTENT);
 
     /* ISteamTimeline: game modes (ETimelineGameMode). */
     REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_INVALID",        k_ETimelineGameMode_Invalid,       CONST_CS | CONST_PERSISTENT);

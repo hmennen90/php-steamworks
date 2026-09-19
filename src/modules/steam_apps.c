@@ -160,3 +160,26 @@ PHP_FUNCTION(steam_apps_get_app_build_id)
 
     RETURN_LONG((zend_long)SteamAPI_ISteamApps_GetAppBuildId(apps));
 }
+
+PHP_FUNCTION(steam_apps_get_launch_command_line)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    ISteamApps *apps = steamworks_apps();
+    if (!apps) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* The command line Steam started the game with through a steam://run link or
+       an accepted invite (e.g. "+connect_lobby <id>"); '' when there was none.
+       A running game that is launched again gets NewUrlLaunchParameters_t and
+       reads the new line here. */
+    char line[4096];
+    line[0] = '\0';
+    if (SteamAPI_ISteamApps_GetLaunchCommandLine(apps, line, (int)sizeof(line)) <= 0) {
+        line[0] = '\0';
+    }
+    line[sizeof(line) - 1] = '\0';
+    RETURN_STRING(line);
+}

@@ -32,6 +32,7 @@ typedef void ISteamTimeline;
 typedef void ISteamUGC;
 typedef void ISteamNetworkingSockets;
 typedef void ISteamNetworkingUtils;
+typedef void ISteamMatchmaking;
 
 /* SDK typedefs */
 typedef uint32_t AppId_t;
@@ -62,6 +63,27 @@ typedef struct {
 typedef uint64_t PublishedFileId_t;       /* Workshop item id */
 typedef uint32_t HSteamNetConnection;     /* ISteamNetworkingSockets connection */
 typedef uint32_t HSteamListenSocket;      /* ISteamNetworkingSockets listen socket */
+typedef uint32_t HSteamNetPollGroup;      /* ISteamNetworkingSockets poll group */
+
+/* Connection quality snapshot (GetConnectionRealTimeStatus). Every field sits at
+   the same offset under pack(8) and pack(4) and the size is 120 either way —
+   measured against the SDK 1.64 headers. */
+typedef struct {
+    int32   m_eState;                   /* ESteamNetworkingConnectionState */
+    int32   m_nPing;                    /* ms */
+    float   m_flConnectionQualityLocal; /* 0..1, share of packets delivered */
+    float   m_flConnectionQualityRemote;
+    float   m_flOutPacketsPerSec;
+    float   m_flOutBytesPerSec;
+    float   m_flInPacketsPerSec;
+    float   m_flInBytesPerSec;
+    int32   m_nSendRateBytesPerSecond;
+    int32   m_cbPendingUnreliable;
+    int32   m_cbPendingReliable;
+    int32   m_cbSentUnackedReliable;
+    int64_t m_usecQueueTime;
+    uint32  reserved[16];
+} SteamNetConnectionRealTimeStatus_t;
 
 /* Leaderboard enums (values match the SDK exactly) */
 typedef enum {
@@ -146,6 +168,31 @@ enum {
     k_iCallback_LeaderboardUGCSet              = 1100 + 11, /* 1111 */
 };
 
+/* Invites and joins (Phase 4b/4c). k_iSteamFriendsCallbacks = 300,
+   k_iSteamMatchmakingCallbacks = 500 (SDK 1.64 isteamfriends.h / isteammatchmaking.h). */
+enum {
+    k_iCallback_GameLobbyJoinRequested        = 300 + 33, /* 333 */
+    k_iCallback_GameRichPresenceJoinRequested = 300 + 37, /* 337 */
+};
+
+/* Lobbies (Phase 4c): k_iSteamMatchmakingCallbacks = 500. */
+enum {
+    k_iCallback_LobbyEnter      = 500 + 4,  /* 504, also the JoinLobby CallResult */
+    k_iCallback_LobbyDataUpdate = 500 + 5,  /* 505 */
+    k_iCallback_LobbyChatUpdate = 500 + 6,  /* 506 */
+    k_iCallback_LobbyChatMsg    = 500 + 7,  /* 507 */
+    k_iCallback_LobbyCreated    = 500 + 13, /* 513, CreateLobby CallResult */
+};
+
+/* Lobby limits (SDK: k_nMaxLobbyKeyLength, k_cubChatMetadataMax, and "up to 4k"
+   for SendLobbyChatMsg). Key length excludes the NUL, the metadata size includes it. */
+#define k_nMaxLobbyKeyLength         255
+#define k_cubChatMetadataMax         8192
+#define STEAMWORKS_LOBBY_CHAT_MAX    4096
+
+/* Max length of a rich presence value, incl. NUL (SDK: k_cchMaxRichPresenceValueLength). */
+#define k_cchMaxRichPresenceValueLength 256
+
 /* Max length of a Steam Cloud file name, incl. NUL (SDK: k_cchFilenameMax). */
 #define k_cchFilenameMax 260
 
@@ -182,10 +229,25 @@ enum {
 #define STEAMWORKS_NETMSG_IDENTITY_OFF   16   /* SteamNetworkingIdentity m_identityPeer */
 #define STEAMWORKS_NETMSG_MSGNUM_OFF     168  /* int64 m_nMessageNumber */
 #define STEAMWORKS_NETMSG_FLAGS_OFF      196  /* int m_nFlags */
-#define STEAMWORKS_NETCB_CONN_OFF        0    /* uint32 m_hConn */
-#define STEAMWORKS_NETCB_IDENTITY_OFF    8    /* m_info.m_identityRemote */
-#define STEAMWORKS_NETCB_NEWSTATE_OFF    184  /* m_info.m_eState */
+/* SteamNetConnectionStatusChangedCallback_t is a callback struct, so its packing
+   follows the platform like every other callback: m_info starts at 8 under
+   pack(8) (Windows) but at 4 under pack(4) (Linux/macOS). Up to v0.15 the
+   Windows offsets were used everywhere, and Linux/macOS read peer and states
+   4 bytes off. Offsets inside SteamNetConnectionInfo_t are the same under both.
+   All values measured against the SDK 1.64 headers with both packings. */
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#define STEAMWORKS_NETCB_INFO_OFF        4
+#define STEAMWORKS_NETCB_OLDSTATE_OFF    700  /* m_eOldState */
+#define STEAMWORKS_NETCB_SIZE            704
+#else
+#define STEAMWORKS_NETCB_INFO_OFF        8
 #define STEAMWORKS_NETCB_OLDSTATE_OFF    704  /* m_eOldState */
+#define STEAMWORKS_NETCB_SIZE            712
+#endif
+#define STEAMWORKS_NETCB_CONN_OFF        0    /* uint32 m_hConn */
+#define STEAMWORKS_NETCB_IDENTITY_OFF    (STEAMWORKS_NETCB_INFO_OFF + 0)   /* m_info.m_identityRemote */
+#define STEAMWORKS_NETCB_LISTEN_OFF      (STEAMWORKS_NETCB_INFO_OFF + 144) /* m_info.m_hListenSocket */
+#define STEAMWORKS_NETCB_NEWSTATE_OFF    (STEAMWORKS_NETCB_INFO_OFF + 176) /* m_info.m_eState */
 /* Send flags. */
 #define STEAMWORKS_NET_SEND_UNRELIABLE   0
 #define STEAMWORKS_NET_SEND_RELIABLE     8
@@ -299,6 +361,62 @@ typedef struct {
     SteamLeaderboard_t m_hSteamLeaderboard;
 } LeaderboardUGCSet_t;
 
+/* Phase 4b. CSteamID/CGameID are 8 bytes with alignment 1 in the SDK (declared
+   under pack(1)); here they are uint64_t. Every one of them sits at an offset
+   that is a multiple of 8, so the layout is the same — sizes and offsets
+   checked against the SDK headers under both pack(8) and pack(4). */
+typedef struct {
+    uint64_t m_gameID;          /* CGameID; the app id is the low 24 bits */
+    uint32   m_unGameIP;
+    uint16_t m_usGamePort;
+    uint16_t m_usQueryPort;
+    uint64_t m_steamIDLobby;    /* CSteamID; 0 when not in a lobby */
+} FriendGameInfo_t;
+
+typedef struct {
+    uint64_t m_steamIDFriend;   /* CSteamID; invalid if not joined via a friend */
+    char     m_rgchConnect[k_cchMaxRichPresenceValueLength];
+} GameRichPresenceJoinRequested_t;
+
+/* Phase 4c — lobbies. Field order copied from SDK 1.64 isteammatchmaking.h /
+   isteamfriends.h; bool fields as uint8_t (the SDK's bool is one byte). */
+typedef struct {
+    int32    m_eResult;             /* EResult (1 = OK) */
+    uint64_t m_ulSteamIDLobby;      /* 0 if creation failed */
+} LobbyCreated_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint32   m_rgfChatPermissions;
+    uint8_t  m_bLocked;             /* only invited users may join */
+    uint32   m_EChatRoomEnterResponse; /* EChatRoomEnterResponse, 1 = success */
+} LobbyEnter_t;
+
+typedef struct {
+    uint64_t m_steamIDLobby;        /* CSteamID */
+    uint64_t m_steamIDFriend;       /* CSteamID; invalid if not joined via a friend */
+} GameLobbyJoinRequested_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDMember;     /* == lobby for lobby data, else a member */
+    uint8_t  m_bSuccess;
+} LobbyDataUpdate_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDUserChanged;
+    uint64_t m_ulSteamIDMakingChange;
+    uint32   m_rgfChatMemberStateChange; /* EChatMemberStateChange bits */
+} LobbyChatUpdate_t;
+
+typedef struct {
+    uint64_t m_ulSteamIDLobby;
+    uint64_t m_ulSteamIDUser;
+    uint8_t  m_eChatEntryType;
+    uint32   m_iChatID;             /* GetLobbyChatEntry index */
+} LobbyChatMsg_t;
+
 /* ISteamUser web-api ticket response callback (verified vs SDK 1.64, id 168). */
 typedef struct {
     HAuthTicket m_hAuthTicket;
@@ -381,6 +499,32 @@ int         SteamAPI_ISteamFriends_GetSmallFriendAvatar(ISteamFriends *self, uin
 int         SteamAPI_ISteamFriends_GetMediumFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
 int         SteamAPI_ISteamFriends_GetLargeFriendAvatar(ISteamFriends *self, uint64_steamid steam_id);
 bool        SteamAPI_ISteamFriends_RequestUserInformation(ISteamFriends *self, uint64_steamid steam_id, bool require_name_only);
+/* Invites and joins (Phase 4b, SDK 1.64/1.65 flat API). */
+bool        SteamAPI_ISteamFriends_InviteUserToGame(ISteamFriends *self, uint64_steamid friend_id, const char *connect);
+void        SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString(ISteamFriends *self, const char *connect);
+const char *SteamAPI_ISteamFriends_GetFriendRichPresence(ISteamFriends *self, uint64_steamid friend_id, const char *key);
+bool        SteamAPI_ISteamFriends_GetFriendGamePlayed(ISteamFriends *self, uint64_steamid friend_id, FriendGameInfo_t *info);
+void        SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialog(ISteamFriends *self, uint64_steamid lobby);
+
+/* ── ISteamMatchmaking ("SteamMatchMaking009") — lobbies (Phase 4c) ─────────
+ * SDK 1.64/1.65 flat API. ELobbyType / EChatEntryType are int-sized enums;
+ * CSteamID* out-params are uint64 at the ABI level. */
+SteamAPICall_t SteamAPI_ISteamMatchmaking_CreateLobby(ISteamMatchmaking *self, int lobby_type, int max_members);
+SteamAPICall_t SteamAPI_ISteamMatchmaking_JoinLobby(ISteamMatchmaking *self, uint64_steamid lobby);
+void           SteamAPI_ISteamMatchmaking_LeaveLobby(ISteamMatchmaking *self, uint64_steamid lobby);
+bool           SteamAPI_ISteamMatchmaking_InviteUserToLobby(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid invitee);
+int            SteamAPI_ISteamMatchmaking_GetNumLobbyMembers(ISteamMatchmaking *self, uint64_steamid lobby);
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyMemberByIndex(ISteamMatchmaking *self, uint64_steamid lobby, int member);
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value);
+const char    *SteamAPI_ISteamMatchmaking_GetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid user, const char *key);
+void           SteamAPI_ISteamMatchmaking_SetLobbyMemberData(ISteamMatchmaking *self, uint64_steamid lobby, const char *key, const char *value);
+bool           SteamAPI_ISteamMatchmaking_SendLobbyChatMsg(ISteamMatchmaking *self, uint64_steamid lobby, const void *body, int size);
+int            SteamAPI_ISteamMatchmaking_GetLobbyChatEntry(ISteamMatchmaking *self, uint64_steamid lobby, int chat_id, uint64_steamid *user, void *data, int size, int *entry_type);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyJoinable(ISteamMatchmaking *self, uint64_steamid lobby, bool joinable);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyType(ISteamMatchmaking *self, uint64_steamid lobby, int lobby_type);
+uint64_steamid SteamAPI_ISteamMatchmaking_GetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby);
+bool           SteamAPI_ISteamMatchmaking_SetLobbyOwner(ISteamMatchmaking *self, uint64_steamid lobby, uint64_steamid new_owner);
 
 /* ── ISteamUserStats ───────────────────────────────────────────────── */
 bool SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *name);
@@ -435,6 +579,7 @@ uint32      SteamAPI_ISteamApps_GetEarliestPurchaseUnixTime(ISteamApps *self, Ap
 uint32      SteamAPI_ISteamApps_GetInstalledDepots(ISteamApps *self, AppId_t appid, DepotId_t *depots, uint32 max_depots);
 int         SteamAPI_ISteamApps_GetDLCCount(ISteamApps *self);
 int         SteamAPI_ISteamApps_GetAppBuildId(ISteamApps *self);
+int         SteamAPI_ISteamApps_GetLaunchCommandLine(ISteamApps *self, char *command_line, int size);
 
 /* ── ISteamUtils ───────────────────────────────────────────────────── */
 uint32      SteamAPI_ISteamUtils_GetAppID(ISteamUtils *self);
@@ -523,6 +668,13 @@ int  SteamAPI_ISteamNetworkingSockets_AcceptConnection(ISteamNetworkingSockets *
 bool SteamAPI_ISteamNetworkingSockets_CloseConnection(ISteamNetworkingSockets *self, HSteamNetConnection peer, int reason, const char *debug, bool enable_linger);
 int  SteamAPI_ISteamNetworkingSockets_SendMessageToConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, const void *data, uint32 cb_data, int send_flags, int64_t *out_message_number);
 int  SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(ISteamNetworkingSockets *self, HSteamNetConnection conn, void **out_messages, int max_messages);
+/* Phase 4d: poll groups, connection status, closing a listen socket (SDK 1.64/1.65). */
+bool               SteamAPI_ISteamNetworkingSockets_CloseListenSocket(ISteamNetworkingSockets *self, HSteamListenSocket socket);
+HSteamNetPollGroup SteamAPI_ISteamNetworkingSockets_CreatePollGroup(ISteamNetworkingSockets *self);
+bool               SteamAPI_ISteamNetworkingSockets_DestroyPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group);
+bool               SteamAPI_ISteamNetworkingSockets_SetConnectionPollGroup(ISteamNetworkingSockets *self, HSteamNetConnection conn, HSteamNetPollGroup group);
+int                SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(ISteamNetworkingSockets *self, HSteamNetPollGroup group, void **out_messages, int max_messages);
+int                SteamAPI_ISteamNetworkingSockets_GetConnectionRealTimeStatus(ISteamNetworkingSockets *self, HSteamNetConnection conn, SteamNetConnectionRealTimeStatus_t *status, int lanes, void *lane_status);
 
 void SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess(ISteamNetworkingUtils *self);
 void SteamAPI_SteamNetworkingIdentity_SetSteamID64(void *identity, uint64_steamid steam_id);

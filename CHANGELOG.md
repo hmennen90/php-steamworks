@@ -2,12 +2,16 @@
 
 ## [0.16.0] - Unreleased
 
-Shared files on leaderboard entries (Phase 4a of the multiplayer plan in
-CLAUDE.md). A cloud file can be shared, attached to the player's own leaderboard
-entry, and downloaded by anyone who reads that entry — e.g. the save game of a
-weekly challenge's winner, or a friend's company data. Steam's own storage, no
-server of the game's. Callback IDs and struct layouts copied from the Steamworks
-SDK headers (both interfaces unchanged between 1.64 and 1.65).
+Multiplayer on Steam's own infrastructure (Phase 4 of CLAUDE.md): shared files
+on leaderboard entries, invites and joins over rich presence, lobbies, and what
+a host with several clients needs from the P2P layer. No server of the game's.
+
+Every new callback and CallResult struct was measured against the Steamworks SDK
+headers under both packings - pack(8) for Windows and pack(4) for Linux/macOS -
+and matches field for field. The interfaces used are unchanged between SDK 1.64
+and 1.65. A mock-only test hook (steam_mock_fire_callback, never in release
+builds) delivers callbacks in the SDK's layout through the extension's real
+dispatch, so the event queues are covered by tests.
 
 ### Added
 - ISteamRemoteStorage: `steam_remote_file_share()` (async → `remote_file_shared`,
@@ -17,10 +21,38 @@ SDK headers (both interfaces unchanged between 1.64 and 1.65).
   `leaderboard_ugc_set`, 1111)
 - `steam_stats_get_downloaded_entry()` returns the entry's attached file as `ugc`
 - Constant `STEAM_UGC_HANDLE_INVALID` (-1) for an entry without a file
+- ISteamFriends — invites and joins: `steam_friends_invite_user_to_game()`,
+  `steam_friends_activate_invite_dialog_connect_string()`,
+  `steam_friends_get_friend_rich_presence()`, `steam_friends_get_friend_game_played()`,
+  and `steam_friends_get_join_requests()` (queue of GameRichPresenceJoinRequested_t, 337)
+- ISteamApps: `steam_apps_get_launch_command_line()` for a game started by an invite
+- ISteamMatchmaking (new module `steam_matchmaking.c`, `SteamMatchMaking009`):
+  create/join (async → `lobby_created` 513 / `lobby_entered` 504), leave, invite,
+  members, owner, lobby and member data, joinable, type, chat, plus
+  `steam_friends_activate_overlay_invite_dialog()`. `steam_matchmaking_get_events()`
+  delivers GameLobbyJoinRequested_t (333), LobbyDataUpdate_t (505), LobbyChatUpdate_t
+  (506) and LobbyChatMsg_t (507) in arrival order; chat text is read in the callback
+  and kept binary-safe
+- ISteamNetworkingSockets: poll groups (`steam_net_create_poll_group()`,
+  `_destroy_poll_group()`, `_set_connection_poll_group()`,
+  `_receive_messages_on_poll_group()`), `steam_net_get_connection_status()`
+  (ping, quality, rates) and `steam_net_close_listen_socket()`
+- `steam_net_get_connection_events()` names the `listen_socket` an incoming
+  connection arrived on (0 for outgoing)
+- Constants `STEAM_LOBBY_TYPE_*`, `STEAM_CHAT_MEMBER_STATE_*`,
+  `STEAM_CHAT_ROOM_ENTER_SUCCESS`, `STEAM_CHAT_ENTRY_TYPE_CHAT_MSG`
 - Stubs: `STEAM_LEADERBOARD_DATA_FRIENDS` and `STEAM_LEADERBOARD_DETAILS_MAX`,
   which the extension registered but the stubs lacked
 
 ### Fixed
+- Linux and macOS: `steam_net_get_connection_events()` read `peer`, `state`
+  and `old_state` from the wrong bytes. SteamNetConnectionStatusChangedCallback_t
+  is packed like every callback - 4-byte packing there, where the connection info
+  starts at offset 4, not 8 - but the Windows offsets were used everywhere. The
+  offsets now follow the platform; measured against the SDK under both packings
+- Stubs lacked 66 constants the extension registers (hardware, timeline,
+  persona, friends, avatars, auth, Workshop state, P2P); they are generated from
+  the extension now
 - README listed 54 of the extension's functions; the 41 added since v0.6
   (auth tickets, friends list, Workshop, P2P networking) are now in it too
 

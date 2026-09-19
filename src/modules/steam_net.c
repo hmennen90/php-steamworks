@@ -13,6 +13,8 @@
  * Verified against Steamworks SDK 1.64 (SteamNetworkingSockets_v012).
  */
 
+static void net_messages_to_array(zval *out, void **messages, int count);
+
 
 PHP_FUNCTION(steam_net_init_relay_network_access)
 {
@@ -180,12 +182,158 @@ PHP_FUNCTION(steam_net_receive_messages)
     int count = SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnConnection(
         net, (HSteamNetConnection)conn, messages, (int)max_messages);
 
-    array_init(return_value);
-    if (count <= 0) {
-        efree(messages);
-        return;
+    net_messages_to_array(return_value, messages, count);
+    efree(messages);
+}
+
+/* ── Phase 4d: poll groups, connection status, listen sockets ───────────────── */
+
+PHP_FUNCTION(steam_net_close_listen_socket)
+{
+    zend_long socket;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(socket)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
     }
 
+    /* Stops accepting; connections that came in through it stay open. */
+    RETURN_BOOL(SteamAPI_ISteamNetworkingSockets_CloseListenSocket(net, (HSteamListenSocket)socket));
+}
+
+PHP_FUNCTION(steam_net_create_poll_group)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    HSteamNetPollGroup group = SteamAPI_ISteamNetworkingSockets_CreatePollGroup(net);
+    if (group == 0 /* k_HSteamNetPollGroup_Invalid */) {
+        RETURN_FALSE;
+    }
+    RETURN_LONG((zend_long)group);
+}
+
+PHP_FUNCTION(steam_net_destroy_poll_group)
+{
+    zend_long group;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(group)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* Connections in the group are removed from it, not closed. */
+    RETURN_BOOL(SteamAPI_ISteamNetworkingSockets_DestroyPollGroup(net, (HSteamNetPollGroup)group));
+}
+
+PHP_FUNCTION(steam_net_set_connection_poll_group)
+{
+    zend_long conn;
+    zend_long group;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(conn)
+        Z_PARAM_LONG(group)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* group 0 takes the connection out of its group. */
+    RETURN_BOOL(SteamAPI_ISteamNetworkingSockets_SetConnectionPollGroup(
+        net, (HSteamNetConnection)conn, (HSteamNetPollGroup)group));
+}
+
+PHP_FUNCTION(steam_net_receive_messages_on_poll_group)
+{
+    zend_long group;
+    zend_long max_messages = 32;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_LONG(group)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(max_messages)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    if (max_messages < 1)   { max_messages = 1; }
+    if (max_messages > 256) { max_messages = 256; }
+
+    /* Messages of every connection in the group, each tagged with its
+       'connection' — one call per frame for a host with several clients. */
+    void **messages = emalloc((size_t)max_messages * sizeof(void *));
+    int count = SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(
+        net, (HSteamNetPollGroup)group, messages, (int)max_messages);
+
+    net_messages_to_array(return_value, messages, count);
+    efree(messages);
+}
+
+PHP_FUNCTION(steam_net_get_connection_status)
+{
+    zend_long conn;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(conn)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamNetworkingSockets *net = steamworks_net();
+    if (!net) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    SteamNetConnectionRealTimeStatus_t s;
+    memset(&s, 0, sizeof(s));
+    if (SteamAPI_ISteamNetworkingSockets_GetConnectionRealTimeStatus(
+            net, (HSteamNetConnection)conn, &s, 0, NULL) != 1 /* k_EResultOK */) {
+        RETURN_FALSE; /* no such connection */
+    }
+
+    array_init(return_value);
+    add_assoc_long(return_value, "state", (zend_long)s.m_eState);
+    add_assoc_long(return_value, "ping", (zend_long)s.m_nPing);
+    add_assoc_double(return_value, "quality_local", (double)s.m_flConnectionQualityLocal);
+    add_assoc_double(return_value, "quality_remote", (double)s.m_flConnectionQualityRemote);
+    add_assoc_double(return_value, "out_packets_per_sec", (double)s.m_flOutPacketsPerSec);
+    add_assoc_double(return_value, "out_bytes_per_sec", (double)s.m_flOutBytesPerSec);
+    add_assoc_double(return_value, "in_packets_per_sec", (double)s.m_flInPacketsPerSec);
+    add_assoc_double(return_value, "in_bytes_per_sec", (double)s.m_flInBytesPerSec);
+    add_assoc_long(return_value, "send_rate", (zend_long)s.m_nSendRateBytesPerSecond);
+    add_assoc_long(return_value, "pending_unreliable", (zend_long)s.m_cbPendingUnreliable);
+    add_assoc_long(return_value, "pending_reliable", (zend_long)s.m_cbPendingReliable);
+    add_assoc_long(return_value, "sent_unacked_reliable", (zend_long)s.m_cbSentUnackedReliable);
+    add_assoc_long(return_value, "queue_time_usec", (zend_long)s.m_usecQueueTime);
+}
+
+/* Copies received SteamNetworkingMessage_t payloads into a PHP array and
+   releases each message. Shared by the per-connection and poll-group reads. */
+static void net_messages_to_array(zval *out, void **messages, int count)
+{
+    array_init(out);
     for (int i = 0; i < count; i++) {
         void *msg = messages[i];
         if (!msg) { continue; }
@@ -206,10 +354,9 @@ PHP_FUNCTION(steam_net_receive_messages)
         add_assoc_long(&entry, "peer", (zend_long)peer);
         add_assoc_long(&entry, "message_number", (zend_long)num);
         add_assoc_bool(&entry, "reliable", (flags & STEAMWORKS_NET_SEND_RELIABLE) != 0);
-        add_next_index_zval(return_value, &entry);
+        add_next_index_zval(out, &entry);
 
         /* Release the SDK-owned message once we've copied its payload. */
         SteamAPI_SteamNetworkingMessage_t_Release(msg);
     }
-    efree(messages);
 }

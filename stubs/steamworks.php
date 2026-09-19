@@ -19,6 +19,99 @@ const STEAM_LEADERBOARD_DETAILS_MAX = 64;
 /** Eintrag ohne angehängte Datei (k_UGCHandleInvalid, alle Bits gesetzt). */
 const STEAM_UGC_HANDLE_INVALID = -1;
 
+/* ── Lobbys (ELobbyType, EChatMemberStateChange, EChatRoomEnterResponse, EChatEntryType) ── */
+const STEAM_LOBBY_TYPE_PRIVATE = 0;
+const STEAM_LOBBY_TYPE_FRIENDS_ONLY = 1;
+const STEAM_LOBBY_TYPE_PUBLIC = 2;
+const STEAM_LOBBY_TYPE_INVISIBLE = 3;
+const STEAM_LOBBY_TYPE_PRIVATE_UNIQUE = 4;
+const STEAM_CHAT_MEMBER_STATE_ENTERED = 1;
+const STEAM_CHAT_MEMBER_STATE_LEFT = 2;
+const STEAM_CHAT_MEMBER_STATE_DISCONNECTED = 4;
+const STEAM_CHAT_MEMBER_STATE_KICKED = 8;
+const STEAM_CHAT_MEMBER_STATE_BANNED = 16;
+const STEAM_CHAT_ROOM_ENTER_SUCCESS = 1;
+const STEAM_CHAT_ENTRY_TYPE_CHAT_MSG = 1;
+/* ── Weitere Konstanten (registriert seit v0.9–v0.15, bis v0.16 ohne Stub) ── */
+const STEAM_HARDWARE_TYPE_NONE = 0;
+const STEAM_HARDWARE_TYPE_STEAM_DECK = 1;
+const STEAM_HARDWARE_TYPE_STEAM_MACHINE = 2;
+const STEAM_HARDWARE_TYPE_STEAM_FRAME = 3;
+
+const STEAM_HARDWARE_CONFIG_NONE = 0;
+const STEAM_HARDWARE_CONFIG_LOW = 1;
+const STEAM_HARDWARE_CONFIG_MEDIUM = 2;
+const STEAM_HARDWARE_CONFIG_HIGH = 3;
+const STEAM_HARDWARE_CONFIG_MAX = 4;
+const STEAM_HARDWARE_CONFIG_STEAM_DECK = 5;
+const STEAM_HARDWARE_CONFIG_STEAM_MACHINE = 6;
+const STEAM_HARDWARE_CONFIG_STEAM_FRAME = 7;
+
+const STEAM_TIMELINE_GAME_MODE_INVALID = 0;
+const STEAM_TIMELINE_GAME_MODE_PLAYING = 1;
+const STEAM_TIMELINE_GAME_MODE_STAGING = 2;
+const STEAM_TIMELINE_GAME_MODE_MENUS = 3;
+const STEAM_TIMELINE_GAME_MODE_LOADING_SCREEN = 4;
+
+const STEAM_TIMELINE_CLIP_PRIORITY_INVALID = 0;
+const STEAM_TIMELINE_CLIP_PRIORITY_NONE = 1;
+const STEAM_TIMELINE_CLIP_PRIORITY_STANDARD = 2;
+const STEAM_TIMELINE_CLIP_PRIORITY_FEATURED = 3;
+
+const STEAM_PERSONA_STATE_OFFLINE = 0;
+const STEAM_PERSONA_STATE_ONLINE = 1;
+const STEAM_PERSONA_STATE_BUSY = 2;
+const STEAM_PERSONA_STATE_AWAY = 3;
+const STEAM_PERSONA_STATE_SNOOZE = 4;
+const STEAM_PERSONA_STATE_LOOKING_TO_TRADE = 5;
+const STEAM_PERSONA_STATE_LOOKING_TO_PLAY = 6;
+const STEAM_PERSONA_STATE_INVISIBLE = 7;
+
+const STEAM_FRIEND_RELATIONSHIP_NONE = 0;
+const STEAM_FRIEND_RELATIONSHIP_BLOCKED = 1;
+const STEAM_FRIEND_RELATIONSHIP_REQUEST_RECIPIENT = 2;
+const STEAM_FRIEND_RELATIONSHIP_FRIEND = 3;
+const STEAM_FRIEND_RELATIONSHIP_REQUEST_INITIATOR = 4;
+const STEAM_FRIEND_RELATIONSHIP_IGNORED = 5;
+const STEAM_FRIEND_RELATIONSHIP_IGNORED_FRIEND = 6;
+
+const STEAM_FRIEND_FLAG_NONE = 0;
+const STEAM_FRIEND_FLAG_IMMEDIATE = 4;
+const STEAM_FRIEND_FLAG_CLAN_MEMBER = 8;
+const STEAM_FRIEND_FLAG_ON_GAME_SERVER = 16;
+const STEAM_FRIEND_FLAG_ALL = 65535;
+
+const STEAM_AVATAR_SMALL = 0;
+const STEAM_AVATAR_MEDIUM = 1;
+const STEAM_AVATAR_LARGE = 2;
+
+const STEAM_BEGIN_AUTH_SESSION_OK = 0;
+const STEAM_BEGIN_AUTH_SESSION_INVALID_TICKET = 1;
+const STEAM_BEGIN_AUTH_SESSION_DUPLICATE_REQUEST = 2;
+const STEAM_BEGIN_AUTH_SESSION_INVALID_VERSION = 3;
+const STEAM_BEGIN_AUTH_SESSION_GAME_MISMATCH = 4;
+const STEAM_BEGIN_AUTH_SESSION_EXPIRED_TICKET = 5;
+
+const STEAM_UGC_ITEM_STATE_NONE = 0;
+const STEAM_UGC_ITEM_STATE_SUBSCRIBED = 1;
+const STEAM_UGC_ITEM_STATE_LEGACY_ITEM = 2;
+const STEAM_UGC_ITEM_STATE_INSTALLED = 4;
+const STEAM_UGC_ITEM_STATE_NEEDS_UPDATE = 8;
+const STEAM_UGC_ITEM_STATE_DOWNLOADING = 16;
+const STEAM_UGC_ITEM_STATE_DOWNLOAD_PENDING = 32;
+const STEAM_UGC_ITEM_STATE_DISABLED_LOCALLY = 64;
+
+const STEAM_NET_CONNECTION_STATE_NONE = 0;
+const STEAM_NET_CONNECTION_STATE_CONNECTING = 1;
+const STEAM_NET_CONNECTION_STATE_FINDING_ROUTE = 2;
+const STEAM_NET_CONNECTION_STATE_CONNECTED = 3;
+const STEAM_NET_CONNECTION_STATE_CLOSED_BY_PEER = 4;
+const STEAM_NET_CONNECTION_STATE_PROBLEM_DETECTED_LOCALLY = 5;
+
+const STEAM_NET_SEND_UNRELIABLE = 0;
+const STEAM_NET_SEND_RELIABLE = 8;
+
+
 /* ── UGC publish path (steam_ugc_create_item / set_item_visibility / progress) ── */
 const STEAM_UGC_FILE_TYPE_COMMUNITY = 0;
 const STEAM_UGC_VISIBILITY_PUBLIC = 0;
@@ -248,6 +341,62 @@ function steam_friends_request_user_information(int $steam_id, bool $name_only =
  * @return array{width:int, height:int, rgba:string}|null rgba = width*height*4 Bytes
  */
 function steam_friends_get_friend_avatar(int $steam_id, int $size = STEAM_AVATAR_MEDIUM): ?array {}
+
+/**
+ * Lädt einen Freund in das laufende Spiel ein. Nimmt er an, bekommt sein Spiel
+ * den Connect-String über steam_friends_get_join_requests() (oder, wenn es noch
+ * nicht lief, über steam_apps_get_launch_command_line()).
+ *
+ * @param int $friend_id SteamID des Freundes
+ * @param string $connect Connect-String, 1 bis 255 Bytes (z. B. "+connect_lobby 123")
+ * @return bool true, wenn die Einladung verschickt wurde
+ */
+function steam_friends_invite_user_to_game(int $friend_id, string $connect): bool {}
+
+/**
+ * Öffnet den Einladungsdialog des Overlays; jeder dort gewählte Freund bekommt
+ * den Connect-String.
+ *
+ * @param string $connect Connect-String
+ * @return bool false, wenn Steam nicht initialisiert ist
+ */
+function steam_friends_activate_invite_dialog_connect_string(string $connect): bool {}
+
+/**
+ * Rich-Presence-Wert eines Freundes, z. B. "connect". '' für einen nicht
+ * gesetzten Schlüssel.
+ *
+ * @param int $friend_id SteamID
+ * @param string $key Rich-Presence-Schlüssel
+ * @return string|false false, wenn Steam nicht initialisiert ist
+ */
+function steam_friends_get_friend_rich_presence(int $friend_id, string $key): string|false {}
+
+/**
+ * Was ein Freund gerade spielt.
+ *
+ * @param int $friend_id SteamID
+ * @return array{game_id:int, app_id:int, ip:int, port:int, query_port:int, lobby:int}|false
+ *         false, wenn er in keinem Spiel ist; lobby = 0 ohne Lobby
+ */
+function steam_friends_get_friend_game_played(int $friend_id): array|false {}
+
+/**
+ * Beitritts-Anfragen seit dem letzten Aufruf (GameRichPresenceJoinRequested_t):
+ * ein Freund hat eine Einladung angenommen oder "Beitreten" geklickt. Leert die
+ * Queue. Nach steam_run_callbacks() aufrufen.
+ *
+ * @return list<array{friend:int, connect:string}>
+ */
+function steam_friends_get_join_requests(): array {}
+
+/**
+ * Öffnet den Einladungsdialog des Overlays für eine Lobby.
+ *
+ * @param int $lobby Lobby-SteamID
+ * @return bool false, wenn Steam nicht initialisiert ist
+ */
+function steam_friends_activate_overlay_invite_dialog(int $lobby): bool {}
 
 /* ── steam_stats.c ── */
 
@@ -634,6 +783,14 @@ function steam_apps_get_dlc_count(): int|false {}
  * @return int|false Build-ID, false bei Fehler
  */
 function steam_apps_get_app_build_id(): int|false {}
+
+/**
+ * Kommandozeile, mit der Steam das Spiel gestartet hat — nach einer angenommenen
+ * Einladung z. B. "+connect_lobby 123". '' wenn keine.
+ *
+ * @return string|false false, wenn Steam nicht initialisiert ist
+ */
+function steam_apps_get_launch_command_line(): string|false {}
 
 /* ── steam_utils.c ── */
 
@@ -1156,7 +1313,148 @@ function steam_net_receive_messages(int $connection, int $max = 32): array|false
  * Holt aufgelaufene Verbindungsstatus-Änderungen ab und leert die Queue.
  * Nach jedem steam_run_callbacks() aufrufen.
  *
- * @return array<array{connection:int, state:int, old_state:int, peer:int}>
- *         state/old_state = STEAM_NET_CONNECTION_STATE_* (peer = SteamID, 0 wenn keine)
+ * @return array<array{connection:int, state:int, old_state:int, peer:int, listen_socket:int}>
+ *         state/old_state = STEAM_NET_CONNECTION_STATE_* (peer = SteamID, 0 wenn keine);
+ *         listen_socket = Socket, über den eine eingehende Verbindung kam, 0 bei ausgehenden
  */
 function steam_net_get_connection_events(): array {}
+
+/**
+ * Schließt einen Listen-Socket; bestehende Verbindungen bleiben offen.
+ *
+ * @param int $socket Handle aus steam_net_create_listen_socket_p2p()
+ * @return bool
+ */
+function steam_net_close_listen_socket(int $socket): bool {}
+
+/**
+ * Legt eine Poll-Group an: der Host liest die Nachrichten aller Verbindungen
+ * darin mit einem Aufruf.
+ *
+ * @return int|false Poll-Group-Handle
+ */
+function steam_net_create_poll_group(): int|false {}
+
+/**
+ * Löscht eine Poll-Group; ihre Verbindungen bleiben offen.
+ *
+ * @param int $group Poll-Group-Handle
+ * @return bool
+ */
+function steam_net_destroy_poll_group(int $group): bool {}
+
+/**
+ * Ordnet eine Verbindung einer Poll-Group zu (0 = aus ihrer Gruppe nehmen).
+ *
+ * @param int $connection Verbindungs-Handle
+ * @param int $group Poll-Group-Handle
+ * @return bool
+ */
+function steam_net_set_connection_poll_group(int $connection, int $group): bool {}
+
+/**
+ * Empfangene Nachrichten aller Verbindungen einer Poll-Group, jede mit ihrer
+ * 'connection'. Gleiches Format wie steam_net_receive_messages().
+ *
+ * @param int $group Poll-Group-Handle
+ * @param int $max Maximale Anzahl pro Aufruf (1..256)
+ * @return array<array{data:string, size:int, connection:int, peer:int, message_number:int, reliable:bool}>|false
+ */
+function steam_net_receive_messages_on_poll_group(int $group, int $max = 32): array|false {}
+
+/**
+ * Verbindungsqualität für die Spielerliste.
+ *
+ * @param int $connection Verbindungs-Handle
+ * @return array{state:int, ping:int, quality_local:float, quality_remote:float,
+ *               out_packets_per_sec:float, out_bytes_per_sec:float, in_packets_per_sec:float,
+ *               in_bytes_per_sec:float, send_rate:int, pending_unreliable:int,
+ *               pending_reliable:int, sent_unacked_reliable:int, queue_time_usec:int}|false
+ *         false für eine unbekannte Verbindung; quality_* = Anteil zugestellter Pakete (0..1)
+ */
+function steam_net_get_connection_status(int $connection): array|false {}
+
+/* ── steam_matchmaking.c (ISteamMatchmaking / Lobbys) + steam_callback.c ── */
+
+/**
+ * Erstellt eine Lobby (asynchron). Ergebnis über steam_get_call_result()
+ * (Typ "lobby_created"): ['success', 'result', 'lobby']. Der Ersteller ist danach drin.
+ *
+ * @param int $type STEAM_LOBBY_TYPE_*
+ * @param int $max_members Mindestens 1
+ * @return int|false Call-Handle
+ */
+function steam_matchmaking_create_lobby(int $type, int $max_members): int|false {}
+
+/**
+ * Tritt einer Lobby bei (asynchron). Ergebnis (Typ "lobby_entered"):
+ * ['lobby', 'success', 'response', 'locked', 'permissions']; response =
+ * EChatRoomEnterResponse, STEAM_CHAT_ROOM_ENTER_SUCCESS bei Erfolg.
+ *
+ * @param int $lobby Lobby-SteamID
+ * @return int|false Call-Handle
+ */
+function steam_matchmaking_join_lobby(int $lobby): int|false {}
+
+/** @return bool false, wenn Steam nicht initialisiert ist */
+function steam_matchmaking_leave_lobby(int $lobby): bool {}
+
+/**
+ * Lädt einen Nutzer in die Lobby ein; nimmt er an, bekommt er ein
+ * "join_requested"-Ereignis.
+ */
+function steam_matchmaking_invite_user_to_lobby(int $lobby, int $user): bool {}
+
+/** Mitgliederzahl einer Lobby, in der man selbst ist. */
+function steam_matchmaking_get_num_lobby_members(int $lobby): int|false {}
+
+/** @return int|false SteamID des Mitglieds, false außerhalb des Bereichs */
+function steam_matchmaking_get_lobby_member_by_index(int $lobby, int $index): int|false {}
+
+/** @return int|false SteamID des Besitzers */
+function steam_matchmaking_get_lobby_owner(int $lobby): int|false {}
+
+/** Übergibt die Lobby (nur der Besitzer). */
+function steam_matchmaking_set_lobby_owner(int $lobby, int $owner): bool {}
+
+/** @return string|false '' für einen nicht gesetzten Schlüssel */
+function steam_matchmaking_get_lobby_data(int $lobby, string $key): string|false {}
+
+/**
+ * Setzt Lobby-Daten (nur der Besitzer). Schlüssel 1–255 Zeichen, Wert unter 8192 Bytes.
+ * Alle Mitglieder bekommen ein "data_update" mit member == lobby.
+ */
+function steam_matchmaking_set_lobby_data(int $lobby, string $key, string $value): bool {}
+
+/** @return string|false '' für einen nicht gesetzten Schlüssel */
+function steam_matchmaking_get_lobby_member_data(int $lobby, int $user, string $key): string|false {}
+
+/**
+ * Setzt die eigenen Mitgliederdaten (z. B. "ready"). Gleiche Grenzen wie bei
+ * den Lobby-Daten; alle bekommen ein "data_update".
+ */
+function steam_matchmaking_set_lobby_member_data(int $lobby, string $key, string $value): bool {}
+
+/** Offen oder geschlossen für neue Mitglieder. */
+function steam_matchmaking_set_lobby_joinable(int $lobby, bool $joinable): bool {}
+
+/** @param int $type STEAM_LOBBY_TYPE_* */
+function steam_matchmaking_set_lobby_type(int $lobby, int $type): bool {}
+
+/**
+ * Chat-Nachricht an alle in der Lobby, 1 bis 4096 Bytes, binärsicher — sie kommt
+ * byte-genau als "chat_message" an.
+ */
+function steam_matchmaking_send_lobby_chat_msg(int $lobby, string $message): bool {}
+
+/**
+ * Lobby-Ereignisse seit dem letzten Aufruf, in der Reihenfolge ihres Eintreffens.
+ * Leert die Queue. Nach steam_run_callbacks() aufrufen.
+ *
+ * @return list<array{type:'join_requested', lobby:int, friend:int}
+ *             |array{type:'data_update', lobby:int, member:int, success:bool}
+ *             |array{type:'chat_update', lobby:int, user:int, changed_by:int, state:int}
+ *             |array{type:'chat_message', lobby:int, user:int, entry_type:int, message:string}>
+ *         state = STEAM_CHAT_MEMBER_STATE_*-Bits
+ */
+function steam_matchmaking_get_events(): array {}

@@ -38,6 +38,7 @@ class SteamInterfaceTest extends TestCase
         'ISteamUGC'                => 'STEAMUGC_INTERFACE_VERSION021',
         'ISteamNetworkingSockets'  => 'SteamNetworkingSockets013',
         'ISteamNetworkingUtils'    => 'SteamNetworkingUtils004',
+        'ISteamMatchmaking'        => 'SteamMatchMaking009',
     ];
 
     /**

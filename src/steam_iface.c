@@ -48,6 +48,7 @@ static const char *const apps_versions[]      = { "STEAMAPPS_INTERFACE_VERSION00
 static const char *const timeline_versions[]  = { "STEAMTIMELINE_INTERFACE_V004",        NULL };
 static const char *const ugc_versions[]       = { "STEAMUGC_INTERFACE_VERSION021",       NULL };
 static const char *const net_utils_versions[] = { "SteamNetworkingUtils004",             NULL };
+static const char *const matchmaking_versions[] = { "SteamMatchMaking009",               NULL };
 
 /*
  * No SteamUtils010 fallback: SDK 1.65 removed two methods from the middle of
@@ -78,6 +79,7 @@ static steamworks_iface iface_timeline  = { "ISteamTimeline",          timeline_
 static steamworks_iface iface_ugc       = { "ISteamUGC",               ugc_versions,       false };
 static steamworks_iface iface_net       = { "ISteamNetworkingSockets", net_versions,       false };
 static steamworks_iface iface_net_utils = { "ISteamNetworkingUtils",   net_utils_versions, false };
+static steamworks_iface iface_matchmaking = { "ISteamMatchmaking",     matchmaking_versions, false };
 
 /*
  * Returns the newest interface version Steam provides, or NULL if it provides
@@ -136,3 +138,4 @@ ISteamTimeline          *steamworks_timeline(void)       { return steamworks_res
 ISteamUGC               *steamworks_ugc(void)            { return steamworks_resolve(&iface_ugc); }
 ISteamNetworkingSockets *steamworks_net(void)            { return steamworks_resolve(&iface_net); }
 ISteamNetworkingUtils   *steamworks_net_utils(void)      { return steamworks_resolve(&iface_net_utils); }
+ISteamMatchmaking       *steamworks_matchmaking(void)    { return steamworks_resolve(&iface_matchmaking); }
