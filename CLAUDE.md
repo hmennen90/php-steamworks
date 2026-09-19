@@ -41,7 +41,9 @@ php-steamworks/
 │   │   ├── steam_timeline.c    ← ISteamTimeline: Game Recording, Events, Game Phases
 │   │   ├── steam_ugc.c         ← ISteamUGC: Workshop (Consume-Pfad: subscribe/state/download)
 │   │   ├── steam_callback.c    ← Allgemeine Callbacks (CCallbackBase-Fabrikation): Web-API-Ticket, Net-Events
-│   │   └── steam_net.c         ← ISteamNetworkingSockets: P2P (connect/send/receive/status)
+│   │   ├── steam_net.c         ← ISteamNetworkingSockets: P2P (connect/send/receive/status)
+│   │   ├── steam_matchmaking.c ← ISteamMatchmaking: Lobbys (erstellen/beitreten/Daten/Chat)
+│   │   └── steam_mock_hooks.c  ← nur Mock-Build: steam_mock_fire_callback() löst Callbacks für Tests aus
 ├── stubs/
 │   └── steamworks.php          ← PHP-Stubs für IDE-Autocompletion (kein Runtime-Code)
 ├── tests/
@@ -322,7 +324,12 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
   receive/close + Connection-Status-Events (id 1221). Message-/Callback-Structs über
   SDK-1.64-verifizierte Byte-Offsets. Offen: Statistiken/Lanes, voller Accept-Flow
 
-### Phase 4 — Multiplayer ohne eigenen Server (geplant)
+### Phase 4 — Multiplayer ohne eigenen Server ✅ umgesetzt in v0.16.0 (Live-Test offen)
+
+Alle Teilphasen testgetrieben gebaut, jeder neue Struct gegen die SDK-Header unter
+pack(8) **und** pack(4) vermessen (siehe „Struct-Layout prüfen"). Dabei gefunden und
+behoben: die Offsets der Verbindungs-Events (`SteamNetConnectionStatusChangedCallback_t`)
+waren nur für Windows richtig. Offen: Live-Test mit zwei Steam-Konten.
 
 Ziel: Code Tycoon bekommt drei Mehrspieler-Modi, die nur Steams eigene
 Infrastruktur nutzen — Leaderboards, Remote Storage, Lobbys, Relay-Netz. Kein
@@ -431,7 +438,9 @@ if test "$PHP_STEAMWORKS" != "no"; then
     src/modules/steam_timeline.c \
     src/modules/steam_ugc.c \
     src/modules/steam_callback.c \
-    src/modules/steam_net.c,
+    src/modules/steam_net.c \
+    src/modules/steam_matchmaking.c \
+    src/modules/steam_mock_hooks.c,
     $ext_shared)
 fi
 ```
@@ -508,6 +517,30 @@ class SteamInitTest extends PHPUnit\Framework\TestCase {
 ```
 
 ---
+
+## Callbacks testen (Mock-Hook)
+
+Der Mock liefert von sich aus keine Callbacks. Im Mock-Build (`--enable-steamworks-mock`)
+gibt es deshalb `steam_mock_fire_callback(string $name, array $args)`
+(`src/modules/steam_mock_hooks.c`, komplett in `#ifdef STEAMWORKS_MOCK`, in Release-Builds
+nicht vorhanden). Er registriert die Callbacks und lässt den Mock den Struct im
+SDK-Layout bauen und über die `CCallbackBase`-vtable ausliefern — der Test läuft also
+durch den echten Code in `steam_callback.c`.
+
+- Neuer Callback: `SteamMock_Fire*()` in `ci/mock_sdk/steam_api_mock.c` + Prototyp im
+  Mock-Header + Zweig in `steam_mock_hooks.c`.
+- Tests überspringen, wenn `function_exists('steam_mock_fire_callback')` false ist.
+- Layouts, die vom Packing abhängen, baut der Mock mit **eigenen** gemessenen
+  Offsets, nie mit denen aus `src/steam_api_c.h` — sonst kann der Test einen falschen
+  Offset nicht finden.
+
+## Struct-Layout prüfen (beide Packings, unter Windows)
+
+Die SDK wählt das Callback-Packing allein über `__linux__`/`__APPLE__`
+(`steamclientpublic.h`). Ein Messprogramm mit MSVC gegen die echten Header, einmal normal
+und einmal mit `/D__linux__` gebaut, liefert damit die Layouts für Windows (pack 8) und
+Linux/macOS (pack 4). Dasselbe Programm gegen `src/steam_api_c.h` gebaut muss identische
+`sizeof`/`offsetof`-Werte ausgeben. Vor jedem neuen Callback- oder CallResult-Struct.
 
 ## SDK-Upgrade
 
