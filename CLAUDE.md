@@ -322,6 +322,61 @@ Diese Funktionen werden für jeden Steam-Release benötigt:
   receive/close + Connection-Status-Events (id 1221). Message-/Callback-Structs über
   SDK-1.64-verifizierte Byte-Offsets. Offen: Statistiken/Lanes, voller Accept-Flow
 
+### Phase 4 — Multiplayer ohne eigenen Server (geplant)
+
+Ziel: Code Tycoon bekommt drei Mehrspieler-Modi, die nur Steams eigene
+Infrastruktur nutzen — Leaderboards, Remote Storage, Lobbys, Relay-Netz. Kein
+Server des Spiele-Studios. Die Callback-IDs unten sind gegen die SDK-Header
+geprüft (1.64; die betroffenen Interfaces sind in 1.65 unverändert).
+
+Querschnitt für alle Teilphasen:
+- Workflow „Neue Funktionen" (unten) pro Funktion, inkl. Mock + CI-Liste.
+- **Struct-Packing prüfen:** Callback-Structs sind auf Windows pack(8), auf
+  Linux/macOS pack(4). Jeden neuen Struct in den `#pragma pack`-Block von
+  `steam_api_c.h`, Offsets per C++-Probe gegen die echten Header bestätigen
+  (Beispiel `LobbyCreated_t`: `m_ulSteamIDLobby` liegt bei 8 bzw. 4).
+- Callbacks landen wie `net_events` in einer Warteschlange in
+  `steam_callback.c`; PHP holt sie mit einer `*_get_*`-Funktion ab. Daten, die
+  nur im Callback gültig sind (Lobby-Chat), dort kopieren.
+- Neue Interfaces bekommen einen Eintrag in `steam_iface.c` (Versions-String aus
+  dem SDK-Header kopieren) plus `mock_offered[]` und `SteamInterfaceTest`.
+
+**4a — Anhänge an Leaderboards** (Modus „Wochen-Herausforderung", „geteilte Welt")
+- `steam_remote_file_share($file)` → CallResult 1307 `RemoteStorageFileShareResult_t` (UGC-Handle)
+- `steam_stats_attach_leaderboard_ugc($lb, $ugc)` → CallResult 1111 `LeaderboardUGCSet_t`
+- `steam_remote_ugc_download($ugc, $priority = 0)` → CallResult 1317 `RemoteStorageDownloadUGCResult_t`
+- `steam_remote_ugc_read($ugc, $size, $offset = 0)` — synchron, `UGCRead`
+- `steam_remote_get_ugc_details($ugc)` — synchron, `GetUGCDetails`
+- `steam_stats_get_downloaded_entry()` liefert zusätzlich `ugc` (`LeaderboardEntry_t::m_hUGC`)
+
+**4b — Einladen und Beitreten über Rich Presence** (laufende Partie)
+- `steam_friends_invite_user_to_game($friend, $connect)` — `InviteUserToGame`
+- `steam_friends_activate_invite_dialog_connect_string($connect)` — `ActivateGameOverlayInviteDialogConnectString`
+- `steam_friends_get_friend_rich_presence($friend, $key)` — `GetFriendRichPresence`
+- `steam_friends_get_friend_game_played($friend)` — `GetFriendGamePlayed` (`FriendGameInfo_t`)
+- `steam_friends_get_join_requests()` — Warteschlange aus Callback 337 `GameRichPresenceJoinRequested_t`
+- `steam_apps_get_launch_command_line()` — `GetLaunchCommandLine` (Start per Einladung)
+
+**4c — Lobbys** (neues Modul `steam_matchmaking.c`, `"SteamMatchMaking009"`)
+- CallResults: `steam_matchmaking_create_lobby($type, $max)` → 513 `LobbyCreated_t`,
+  `steam_matchmaking_join_lobby($lobby)` → 504 `LobbyEnter_t`
+- Synchron: `leave_lobby`, `invite_user_to_lobby`, `get_num_lobby_members`,
+  `get_lobby_member_by_index`, `get_lobby_owner`, `set_lobby_owner`,
+  `get/set_lobby_data`, `get/set_lobby_member_data`, `set_lobby_joinable`,
+  `set_lobby_type`, `send_lobby_chat_msg`; dazu `steam_friends_activate_overlay_invite_dialog($lobby)`
+- `steam_matchmaking_get_events()` — Callbacks 333 `GameLobbyJoinRequested_t`,
+  505 `LobbyDataUpdate_t`, 506 `LobbyChatUpdate_t`, 507 `LobbyChatMsg_t`
+  (Chat-Text per `GetLobbyChatEntry` schon im Callback gelesen)
+
+**4d — Netzwerk-Feinschliff** (optional)
+- Poll-Groups: `create_poll_group`, `set_connection_poll_group`, `receive_messages_on_poll_group`
+- `steam_net_get_connection_status($conn)` — `GetConnectionRealTimeStatus` (Ping, Qualität)
+- Offener Punkt aus Phase 3 schließen: voller Accept-Flow
+
+Abschluss jeder Teilphase: Live-Test mit zwei Steam-Konten (erst App 480, dann
+die Spiel-App). Auslieferung: Tag → Runtime-Build in static-php-cli (zieht immer
+den neuesten Tag) → Spiel.
+
 ### Zurückgestellt (dokumentiert)
 - Score-`details`-Arrays (`int32[]`) bei Leaderboard-Upload/Download ✅ erledigt in v0.10.0
 - Real-SDK-Verifikation: Leaderboard-Callback-IDs (1104–1106) ✅ gegen SDK 1.64 (v0.9.0);
