@@ -10,7 +10,7 @@
 #include "ext/standard/info.h"
 
 #define PHP_STEAMWORKS_EXTNAME  "steamworks"
-#define PHP_STEAMWORKS_VERSION  "0.15.0"
+#define PHP_STEAMWORKS_VERSION  "0.16.0"
 
 extern zend_module_entry steamworks_module_entry;
 #define phpext_steamworks_ptr &steamworks_module_entry
@@ -28,6 +28,9 @@ enum steamworks_call_kind {
     STEAMWORKS_CALL_UGC_CREATE_ITEM,          /* CreateItemResult_t */
     STEAMWORKS_CALL_UGC_SUBMIT_ITEM_UPDATE,   /* SubmitItemUpdateResult_t */
     STEAMWORKS_CALL_UGC_DELETE_ITEM,          /* DeleteItemResult_t */
+    STEAMWORKS_CALL_REMOTE_FILE_SHARE,        /* RemoteStorageFileShareResult_t */
+    STEAMWORKS_CALL_REMOTE_UGC_DOWNLOAD,      /* RemoteStorageDownloadUGCResult_t */
+    STEAMWORKS_CALL_LEADERBOARD_UGC_SET,      /* LeaderboardUGCSet_t */
 };
 
 void steamworks_async_minit(void);
@@ -106,6 +109,7 @@ PHP_FUNCTION(steam_stats_upload_score);
 PHP_FUNCTION(steam_stats_download_leaderboard_entries);
 PHP_FUNCTION(steam_stats_get_downloaded_entry);
 PHP_FUNCTION(steam_stats_get_leaderboard_entry_count);
+PHP_FUNCTION(steam_stats_attach_leaderboard_ugc);
 
 /* steam_remote.c */
 PHP_FUNCTION(steam_remote_file_write);
@@ -113,6 +117,10 @@ PHP_FUNCTION(steam_remote_file_read);
 PHP_FUNCTION(steam_remote_file_exists);
 PHP_FUNCTION(steam_remote_file_delete);
 PHP_FUNCTION(steam_remote_file_list);
+PHP_FUNCTION(steam_remote_file_share);
+PHP_FUNCTION(steam_remote_ugc_download);
+PHP_FUNCTION(steam_remote_ugc_read);
+PHP_FUNCTION(steam_remote_get_ugc_details);
 
 /* steam_apps.c */
 PHP_FUNCTION(steam_apps_is_subscribed);

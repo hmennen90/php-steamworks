@@ -259,6 +259,64 @@ PHP_FUNCTION(steam_get_call_result)
             add_assoc_long(return_value, "file_id", (zend_long)result.m_nPublishedFileId);
             return;
         }
+        case STEAMWORKS_CALL_REMOTE_FILE_SHARE: {
+            /* Layout + callback id (1307) from SDK 1.64 isteamremotestorage.h. */
+            RemoteStorageFileShareResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_RemoteStorageFileShareResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read file share result");
+                RETURN_FALSE;
+            }
+            result.m_rgchFilename[k_cchFilenameMax - 1] = '\0';
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "remote_file_shared");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "ugc", (zend_long)result.m_hFile);
+            add_assoc_string(return_value, "name", result.m_rgchFilename);
+            return;
+        }
+        case STEAMWORKS_CALL_REMOTE_UGC_DOWNLOAD: {
+            /* Layout + callback id (1317) from SDK 1.64 isteamremotestorage.h. */
+            RemoteStorageDownloadUGCResult_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_RemoteStorageDownloadUGCResult, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read shared file download result");
+                RETURN_FALSE;
+            }
+            result.m_pchFileName[k_cchFilenameMax - 1] = '\0';
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "remote_ugc_downloaded");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "ugc", (zend_long)result.m_hFile);
+            add_assoc_long(return_value, "app_id", (zend_long)result.m_nAppID);
+            add_assoc_long(return_value, "size", (zend_long)result.m_nSizeInBytes);
+            add_assoc_string(return_value, "name", result.m_pchFileName);
+            add_assoc_long(return_value, "owner", (zend_long)result.m_ulSteamIDOwner);
+            return;
+        }
+        case STEAMWORKS_CALL_LEADERBOARD_UGC_SET: {
+            /* Layout + callback id (1111) from SDK 1.64 isteamuserstats.h. */
+            LeaderboardUGCSet_t result;
+            memset(&result, 0, sizeof(result));
+            if (!SteamAPI_ISteamUtils_GetAPICallResult(utils, handle, &result,
+                    (int)sizeof(result), k_iCallback_LeaderboardUGCSet, &io_failed)
+                || io_failed) {
+                php_error_docref(NULL, E_WARNING, "Failed to read leaderboard UGC result");
+                RETURN_FALSE;
+            }
+            array_init(return_value);
+            add_assoc_string(return_value, "type", "leaderboard_ugc_set");
+            add_assoc_bool(return_value, "success", result.m_eResult == 1 /* k_EResultOK */);
+            add_assoc_long(return_value, "result", (zend_long)result.m_eResult);
+            add_assoc_long(return_value, "leaderboard", (zend_long)result.m_hSteamLeaderboard);
+            return;
+        }
         default:
             php_error_docref(NULL, E_WARNING, "Unknown Steam call kind");
             RETURN_FALSE;

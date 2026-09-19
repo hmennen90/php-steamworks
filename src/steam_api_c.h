@@ -138,6 +138,24 @@ enum {
     k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15, /* 1315 */
 };
 
+/* Shared files attached to leaderboard entries (Phase 4a). Verified vs SDK 1.64
+   isteamremotestorage.h / isteamuserstats.h; both interfaces are unchanged in 1.65. */
+enum {
+    k_iCallback_RemoteStorageFileShareResult   = 1300 + 7,  /* 1307 */
+    k_iCallback_RemoteStorageDownloadUGCResult = 1300 + 17, /* 1317 */
+    k_iCallback_LeaderboardUGCSet              = 1100 + 11, /* 1111 */
+};
+
+/* Max length of a Steam Cloud file name, incl. NUL (SDK: k_cchFilenameMax). */
+#define k_cchFilenameMax 260
+
+/* UGCRead action (values match the SDK's EUGCReadAction). */
+typedef enum {
+    k_EUGCRead_ContinueReadingUntilFinished = 0,
+    k_EUGCRead_ContinueReading              = 1,
+    k_EUGCRead_Close                        = 2,
+} EUGCReadAction;
+
 /* ISteamUGC publish-path CallResult IDs. k_iSteamUGCCallbacks base = 3400
    (verified vs SDK 1.64 steam_api_internal.h / isteamugc.h). */
 enum {
@@ -258,6 +276,29 @@ typedef struct {
     PublishedFileId_t  m_nPublishedFileId;
 } DeleteItemResult_t;
 
+/* Phase 4a CallResults. Field order copied from SDK 1.64. EResult first, then a
+   uint64 handle: the handle sits at offset 8 under pack(8) (Windows) and at 4
+   under pack(4) (Linux/macOS) — which is why these live inside this block. */
+typedef struct {
+    int32       m_eResult;                         /* EResult (1 = OK) */
+    UGCHandle_t m_hFile;                           /* shareable handle */
+    char        m_rgchFilename[k_cchFilenameMax];
+} RemoteStorageFileShareResult_t;
+
+typedef struct {
+    int32       m_eResult;                         /* EResult (1 = OK) */
+    UGCHandle_t m_hFile;
+    AppId_t     m_nAppID;                          /* app that created the file */
+    int32       m_nSizeInBytes;
+    char        m_pchFileName[k_cchFilenameMax];
+    uint64_t    m_ulSteamIDOwner;
+} RemoteStorageDownloadUGCResult_t;
+
+typedef struct {
+    int32              m_eResult;                  /* EResult (1 = OK) */
+    SteamLeaderboard_t m_hSteamLeaderboard;
+} LeaderboardUGCSet_t;
+
 /* ISteamUser web-api ticket response callback (verified vs SDK 1.64, id 168). */
 typedef struct {
     HAuthTicket m_hAuthTicket;
@@ -366,6 +407,7 @@ SteamAPICall_t SteamAPI_ISteamUserStats_UploadLeaderboardScore(ISteamUserStats *
 SteamAPICall_t SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardDataRequest request, int range_start, int range_end);
 bool           SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *self, SteamLeaderboardEntries_t entries, int index, LeaderboardEntry_t *entry, int32 *details, int details_max);
 int            SteamAPI_ISteamUserStats_GetLeaderboardEntryCount(ISteamUserStats *self, SteamLeaderboard_t leaderboard);
+SteamAPICall_t SteamAPI_ISteamUserStats_AttachLeaderboardUGC(ISteamUserStats *self, SteamLeaderboard_t leaderboard, UGCHandle_t ugc);
 
 /* ── ISteamRemoteStorage ───────────────────────────────────────────── */
 bool        SteamAPI_ISteamRemoteStorage_FileWrite(ISteamRemoteStorage *self, const char *file, const void *data, int32 len);
@@ -375,6 +417,12 @@ bool        SteamAPI_ISteamRemoteStorage_FileExists(ISteamRemoteStorage *self, c
 bool        SteamAPI_ISteamRemoteStorage_FileDelete(ISteamRemoteStorage *self, const char *file);
 int32       SteamAPI_ISteamRemoteStorage_GetFileCount(ISteamRemoteStorage *self);
 const char *SteamAPI_ISteamRemoteStorage_GetFileNameAndSize(ISteamRemoteStorage *self, int32 file, int32 *size);
+/* Sharing a cloud file as UGC and reading someone else's (Phase 4a, SDK 1.64/1.65).
+   GetUGCDetails' CSteamID* owner is a uint64 at the ABI level. */
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_FileShare(ISteamRemoteStorage *self, const char *file);
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_UGCDownload(ISteamRemoteStorage *self, UGCHandle_t content, uint32 priority);
+bool           SteamAPI_ISteamRemoteStorage_GetUGCDetails(ISteamRemoteStorage *self, UGCHandle_t content, AppId_t *app_id, char **name, int32 *size, uint64_t *owner);
+int32          SteamAPI_ISteamRemoteStorage_UGCRead(ISteamRemoteStorage *self, UGCHandle_t content, void *data, int32 size, uint32 offset, EUGCReadAction action);
 
 /* ── ISteamApps ────────────────────────────────────────────────────── */
 bool        SteamAPI_ISteamApps_BIsSubscribed(ISteamApps *self);

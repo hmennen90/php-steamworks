@@ -162,7 +162,9 @@ bool SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *sel
         entry->m_nGlobalRank = index + 1;
         entry->m_nScore      = 1000 - index;
         entry->m_cDetails    = n;
-        entry->m_hUGC        = 0;
+        /* Entry 0 carries an attached file, the rest none (k_UGCHandleInvalid),
+           so both sides of the "ugc" key are exercised. */
+        entry->m_hUGC        = (index == 0) ? 77 : 0xffffffffffffffffULL;
     }
     if (details) {
         for (int32 i = 0; i < n; i++) {
@@ -172,6 +174,8 @@ bool SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *sel
     return true;
 }
 int SteamAPI_ISteamUserStats_GetLeaderboardEntryCount(ISteamUserStats *self, SteamLeaderboard_t leaderboard) { return 5; }
+/* Phase 4a handles: 4 = attach, 5 = file share, 6 = ugc download. Shared file = UGC 77. */
+SteamAPICall_t SteamAPI_ISteamUserStats_AttachLeaderboardUGC(ISteamUserStats *self, SteamLeaderboard_t leaderboard, UGCHandle_t ugc) { return 4; }
 
 /* ISteamRemoteStorage */
 bool        SteamAPI_ISteamRemoteStorage_FileWrite(ISteamRemoteStorage *self, const char *file, const void *data, int32 size) { return false; }
@@ -181,6 +185,27 @@ bool        SteamAPI_ISteamRemoteStorage_FileExists(ISteamRemoteStorage *self, c
 bool        SteamAPI_ISteamRemoteStorage_FileDelete(ISteamRemoteStorage *self, const char *file) { return false; }
 int32       SteamAPI_ISteamRemoteStorage_GetFileCount(ISteamRemoteStorage *self) { return 0; }
 const char* SteamAPI_ISteamRemoteStorage_GetFileNameAndSize(ISteamRemoteStorage *self, int32 index, int32 *size) { *size = 0; return ""; }
+
+/* Shared file 77 holds this payload, so share → attach → download → read runs end to end. */
+static const char mock_ugc_payload[] = "{\"company\":\"Mock GmbH\",\"value\":1234}";
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_FileShare(ISteamRemoteStorage *self, const char *file) { return 5; }
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_UGCDownload(ISteamRemoteStorage *self, UGCHandle_t content, uint32 priority) { return 6; }
+bool SteamAPI_ISteamRemoteStorage_GetUGCDetails(ISteamRemoteStorage *self, UGCHandle_t content, AppId_t *app_id, char **name, int32 *size, uint64_t *owner) {
+    if (content != 77) { return false; }
+    if (app_id) { *app_id = 480; }
+    if (name)   { *name = (char *)"company.json"; }
+    if (size)   { *size = (int32)(sizeof(mock_ugc_payload) - 1); }
+    if (owner)  { *owner = 76561197960265728ULL; }
+    return true;
+}
+int32 SteamAPI_ISteamRemoteStorage_UGCRead(ISteamRemoteStorage *self, UGCHandle_t content, void *data, int32 size, uint32 offset, EUGCReadAction action) {
+    int32 total = (int32)(sizeof(mock_ugc_payload) - 1);
+    if (content != 77 || !data || (int32)offset >= total) { return 0; }
+    int32 n = total - (int32)offset;
+    if (n > size) { n = size; }
+    memcpy(data, mock_ugc_payload + offset, (size_t)n);
+    return n;
+}
 
 /* ISteamApps */
 bool           SteamAPI_ISteamApps_BIsSubscribed(ISteamApps *self) { return false; }
@@ -291,6 +316,32 @@ bool SteamAPI_ISteamUtils_GetAPICallResult(ISteamUtils *self, SteamAPICall_t cal
         RemoteStorageUnsubscribePublishedFileResult_t *r = (RemoteStorageUnsubscribePublishedFileResult_t *)callback;
         r->m_eResult         = 1;
         r->m_nPublishedFileId = 123456;
+        return true;
+    }
+    if (callback_expected == k_iCallback_RemoteStorageFileShareResult
+        && callback_size >= (int)sizeof(RemoteStorageFileShareResult_t)) {
+        RemoteStorageFileShareResult_t *r = (RemoteStorageFileShareResult_t *)callback;
+        r->m_eResult = 1;
+        r->m_hFile   = 77;
+        snprintf(r->m_rgchFilename, k_cchFilenameMax, "%s", "company.json");
+        return true;
+    }
+    if (callback_expected == k_iCallback_RemoteStorageDownloadUGCResult
+        && callback_size >= (int)sizeof(RemoteStorageDownloadUGCResult_t)) {
+        RemoteStorageDownloadUGCResult_t *r = (RemoteStorageDownloadUGCResult_t *)callback;
+        r->m_eResult        = 1;
+        r->m_hFile          = 77;
+        r->m_nAppID         = 480;
+        r->m_nSizeInBytes   = (int32)(sizeof(mock_ugc_payload) - 1);
+        snprintf(r->m_pchFileName, k_cchFilenameMax, "%s", "company.json");
+        r->m_ulSteamIDOwner = 76561197960265728ULL;
+        return true;
+    }
+    if (callback_expected == k_iCallback_LeaderboardUGCSet
+        && callback_size >= (int)sizeof(LeaderboardUGCSet_t)) {
+        LeaderboardUGCSet_t *r = (LeaderboardUGCSet_t *)callback;
+        r->m_eResult           = 1;
+        r->m_hSteamLeaderboard = 42;
         return true;
     }
     return false;

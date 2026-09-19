@@ -12,6 +12,12 @@ const STEAM_LEADERBOARD_UPLOAD_KEEP_BEST = 1;
 const STEAM_LEADERBOARD_UPLOAD_FORCE_UPDATE = 2;
 const STEAM_LEADERBOARD_DATA_GLOBAL = 0;
 const STEAM_LEADERBOARD_DATA_GLOBAL_AROUND_USER = 1;
+const STEAM_LEADERBOARD_DATA_FRIENDS = 2;
+const STEAM_LEADERBOARD_DETAILS_MAX = 64;
+
+/* ── Geteilte Dateien (UGC-Handles an Leaderboard-Einträgen) ── */
+/** Eintrag ohne angehängte Datei (k_UGCHandleInvalid, alle Bits gesetzt). */
+const STEAM_UGC_HANDLE_INVALID = -1;
 
 /* ── UGC publish path (steam_ugc_create_item / set_item_visibility / progress) ── */
 const STEAM_UGC_FILE_TYPE_COMMUNITY = 0;
@@ -425,8 +431,10 @@ function steam_stats_download_leaderboard_entries(int $leaderboard, int $request
  *
  * @param int $entries Entries-Handle aus dem "scores_downloaded"-Ergebnis
  * @param int $index 0-basierter Index innerhalb des heruntergeladenen Bereichs
- * @return array{steam_id:int, global_rank:int, score:int, details:list<int>}|null
+ * @return array{steam_id:int, global_rank:int, score:int, details:list<int>, ugc:int}|null
  *         `details` enthält die beim Upload mitgegebenen int32-Werte (leeres Array, wenn keine).
+ *         `ugc` ist die per steam_stats_attach_leaderboard_ugc() angehängte Datei,
+ *         STEAM_UGC_HANDLE_INVALID wenn keine.
  */
 function steam_stats_get_downloaded_entry(int $entries, int $index): ?array {}
 
@@ -438,6 +446,17 @@ function steam_stats_get_downloaded_entry(int $entries, int $index): ?array {}
  */
 function steam_stats_get_leaderboard_entry_count(int $leaderboard): int {}
 
+/**
+ * Hängt eine geteilte Datei an den eigenen Eintrag eines Leaderboards (asynchron).
+ * Der Eintrag muss existieren, also vorher steam_stats_upload_score() aufrufen.
+ * Ergebnis über steam_get_call_result() (Typ "leaderboard_ugc_set").
+ *
+ * @param int $leaderboard Leaderboard-Handle
+ * @param int $ugc UGC-Handle aus steam_remote_file_share()
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_stats_attach_leaderboard_ugc(int $leaderboard, int $ugc): int|false {}
+
 /* ── steam_async.c ── */
 
 /**
@@ -446,8 +465,9 @@ function steam_stats_get_leaderboard_entry_count(int $leaderboard): int {}
  *   - null  → noch nicht fertig (erneut pollen) oder unbekanntes/verbrauchtes Handle
  *   - false → Call ist fehlgeschlagen
  *   - array → Ergebnis mit 'type'-Feld ("leaderboard_found", "score_uploaded",
- *             "scores_downloaded", "timeline_event_recording_exists",
- *             "timeline_game_phase_recording_exists"); das Handle ist danach verbraucht.
+ *             "scores_downloaded", "leaderboard_ugc_set", "remote_file_shared",
+ *             "remote_ugc_downloaded", "timeline_event_recording_exists",
+ *             "timeline_game_phase_recording_exists", "ugc_*"); das Handle ist danach verbraucht.
  *
  * @param int $handle Call-Handle einer asynchronen steam_*-Funktion
  * @return array|false|null
@@ -495,6 +515,49 @@ function steam_remote_file_delete(string $filename): bool {}
  * @return array<string>|false Liste der Dateinamen, false bei Fehler
  */
 function steam_remote_file_list(): array|false {}
+
+/**
+ * Teilt eine Cloud-Datei, damit andere Spieler sie lesen können (asynchron).
+ * Die Datei muss vorher mit steam_remote_file_write() geschrieben worden sein.
+ * Ergebnis über steam_get_call_result() (Typ "remote_file_shared"):
+ * ['success' => bool, 'result' => int, 'ugc' => int, 'name' => string].
+ *
+ * @param string $filename Dateiname im Cloud-Storage
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_remote_file_share(string $filename): int|false {}
+
+/**
+ * Lädt eine geteilte Datei herunter (asynchron), z. B. den `ugc`-Wert eines
+ * Leaderboard-Eintrags. Ergebnis über steam_get_call_result() (Typ
+ * "remote_ugc_downloaded"): ['success', 'result', 'ugc', 'app_id', 'size', 'name', 'owner'].
+ * Danach mit steam_remote_ugc_read() lesen.
+ *
+ * @param int $ugc UGC-Handle
+ * @param int $priority 0 = sofort, höhere Werte werden nachrangig geladen
+ * @return int|false Call-Handle, false bei Fehler
+ */
+function steam_remote_ugc_download(int $ugc, int $priority = 0): int|false {}
+
+/**
+ * Liest eine heruntergeladene geteilte Datei (synchron). Liest ab $offset bis
+ * zu $size Bytes; wird das letzte Byte erreicht, schließt Steam die Datei.
+ *
+ * @param int $ugc UGC-Handle
+ * @param int $size Anzahl Bytes (z. B. 'size' aus dem Download-Ergebnis)
+ * @param int $offset Startposition
+ * @return string|false Die gelesenen Bytes, false wenn nichts gelesen wurde
+ */
+function steam_remote_ugc_read(int $ugc, int $size, int $offset = 0): string|false {}
+
+/**
+ * Angaben zu einer heruntergeladenen geteilten Datei (synchron). Erst nach
+ * abgeschlossenem steam_remote_ugc_download() verfügbar.
+ *
+ * @param int $ugc UGC-Handle
+ * @return array{app_id:int, name:string, size:int, owner:int}|false
+ */
+function steam_remote_get_ugc_details(int $ugc): array|false {}
 
 /* ── steam_apps.c ── */
 

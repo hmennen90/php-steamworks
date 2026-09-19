@@ -110,6 +110,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_optional_string, 0, 0, 1)
     ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_ugc_read, 0, 0, 2)
+    ZEND_ARG_TYPE_INFO(0, ugc, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, size, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, offset, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_steam_long_array, 0, 0, 2)
     ZEND_ARG_TYPE_INFO(0, handle, IS_LONG, 0)
     ZEND_ARG_TYPE_INFO(0, values, IS_ARRAY, 0)
@@ -245,6 +251,7 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_stats_download_leaderboard_entries, arginfo_steam_lb_download)
     PHP_FE(steam_stats_get_downloaded_entry, arginfo_steam_two_longs)
     PHP_FE(steam_stats_get_leaderboard_entry_count, arginfo_steam_one_long)
+    PHP_FE(steam_stats_attach_leaderboard_ugc, arginfo_steam_two_longs)
 
     /* steam_async.c */
     PHP_FE(steam_get_call_result,           arginfo_steam_one_long)
@@ -255,6 +262,10 @@ static const zend_function_entry steamworks_functions[] = {
     PHP_FE(steam_remote_file_exists,        arginfo_steam_one_string)
     PHP_FE(steam_remote_file_delete,        arginfo_steam_one_string)
     PHP_FE(steam_remote_file_list,          arginfo_steam_void)
+    PHP_FE(steam_remote_file_share,         arginfo_steam_one_string)
+    PHP_FE(steam_remote_ugc_download,       arginfo_steam_long_optional_long)
+    PHP_FE(steam_remote_ugc_read,           arginfo_steam_ugc_read)
+    PHP_FE(steam_remote_get_ugc_details,    arginfo_steam_one_long)
 
     /* steam_apps.c */
     PHP_FE(steam_apps_is_subscribed,        arginfo_steam_void)
@@ -382,6 +393,10 @@ PHP_MINIT_FUNCTION(steamworks)
 
     /* Max int32 detail values per leaderboard entry (SDK k_cLeaderboardDetailsMax). */
     REGISTER_LONG_CONSTANT("STEAM_LEADERBOARD_DETAILS_MAX", k_cLeaderboardDetailsMax, CONST_CS | CONST_PERSISTENT);
+
+    /* A leaderboard entry without an attached file carries k_UGCHandleInvalid
+       (all bits set), which reads as -1 as a PHP int. */
+    REGISTER_LONG_CONSTANT("STEAM_UGC_HANDLE_INVALID", -1, CONST_CS | CONST_PERSISTENT);
 
     /* ISteamTimeline: game modes (ETimelineGameMode). */
     REGISTER_LONG_CONSTANT("STEAM_TIMELINE_GAME_MODE_INVALID",        k_ETimelineGameMode_Invalid,       CONST_CS | CONST_PERSISTENT);

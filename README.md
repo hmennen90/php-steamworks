@@ -83,7 +83,7 @@ steam_shutdown();
 
 ## Available Functions
 
-116 functions across 10 Steamworks interfaces. Full signatures with docblocks live in
+121 functions across 10 Steamworks interfaces. Full signatures with docblocks live in
 [`stubs/steamworks.php`](stubs/steamworks.php) (IDE autocompletion).
 
 ### Core
@@ -137,8 +137,9 @@ steam_shutdown();
 - `steam_stats_find_or_create_leaderboard(string $name, int $sort, int $display): int|false`
 - `steam_stats_upload_score(int $leaderboard, int $score, int $method = STEAM_LEADERBOARD_UPLOAD_KEEP_BEST, ?array $details = null): int|false` — `$details` = optional `int[]` game-specific values stored with the score (max `STEAM_LEADERBOARD_DETAILS_MAX` = 64)
 - `steam_stats_download_leaderboard_entries(int $leaderboard, int $request, int $start, int $end): int|false`
-- `steam_stats_get_downloaded_entry(int $entries, int $index): ?array` — returns `['steam_id' => int, 'global_rank' => int, 'score' => int, 'details' => int[]]`
+- `steam_stats_get_downloaded_entry(int $entries, int $index): ?array` — returns `['steam_id' => int, 'global_rank' => int, 'score' => int, 'details' => int[], 'ugc' => int]`; `ugc` is the attached file, `STEAM_UGC_HANDLE_INVALID` if none
 - `steam_stats_get_leaderboard_entry_count(int $leaderboard): int`
+- `steam_stats_attach_leaderboard_ugc(int $leaderboard, int $ugc): int|false` — attach a shared file to your own entry (upload a score first) → `leaderboard_ugc_set`
 
 ### Async CallResults
 - `steam_get_call_result(int $handle): array|false|null` — poll the result of an async call (`null` = pending, `false` = failed, `array` = result with a `type` field)
@@ -149,6 +150,13 @@ steam_shutdown();
 - `steam_remote_file_exists(string $filename): bool`
 - `steam_remote_file_delete(string $filename): bool`
 - `steam_remote_file_list(): array|false`
+
+### Shared files (Remote Storage UGC)
+A cloud file shared with `steam_remote_file_share` gets a UGC handle that can be attached to a leaderboard entry; anyone who downloads the entry can fetch the file.
+- `steam_remote_file_share(string $filename): int|false` — async → `remote_file_shared` with `ugc`
+- `steam_remote_ugc_download(int $ugc, int $priority = 0): int|false` — async → `remote_ugc_downloaded` with `size`, `name`, `owner`
+- `steam_remote_ugc_read(int $ugc, int $size, int $offset = 0): string|false`
+- `steam_remote_get_ugc_details(int $ugc): array|false` — `['app_id', 'name', 'size', 'owner']`, after the download completed
 
 ### Apps
 - `steam_apps_is_subscribed(): bool`

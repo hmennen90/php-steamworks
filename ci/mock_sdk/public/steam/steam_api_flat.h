@@ -68,7 +68,18 @@ enum {
     k_iCallback_RemoteStorageSubscribePublishedFileResult   = 1300 + 13,
     k_iCallback_RemoteStorageUnsubscribePublishedFileResult = 1300 + 15,
     k_iCallback_GetTicketForWebApiResponse                  = 100 + 68,
+    k_iCallback_RemoteStorageFileShareResult                = 1300 + 7,
+    k_iCallback_RemoteStorageDownloadUGCResult              = 1300 + 17,
+    k_iCallback_LeaderboardUGCSet                           = 1100 + 11,
 };
+
+#define k_cchFilenameMax 260
+
+typedef enum {
+    k_EUGCRead_ContinueReadingUntilFinished = 0,
+    k_EUGCRead_ContinueReading              = 1,
+    k_EUGCRead_Close                        = 2,
+} EUGCReadAction;
 
 /* CallResult structs — layout must match src/steam_api_c.h and the real SDK.
  * Same conditional packing as the SDK: pack(4) on Linux/macOS/FreeBSD, else pack(8). */
@@ -135,6 +146,27 @@ typedef struct {
     int32       m_cubTicket;
     uint8_t     m_rgubTicket[2560];
 } GetTicketForWebApiResponse_t;
+
+/* Phase 4a — shared files on leaderboard entries (must match src/steam_api_c.h) */
+typedef struct {
+    int32       m_eResult;
+    UGCHandle_t m_hFile;
+    char        m_rgchFilename[k_cchFilenameMax];
+} RemoteStorageFileShareResult_t;
+
+typedef struct {
+    int32       m_eResult;
+    UGCHandle_t m_hFile;
+    AppId_t     m_nAppID;
+    int32       m_nSizeInBytes;
+    char        m_pchFileName[k_cchFilenameMax];
+    uint64_t    m_ulSteamIDOwner;
+} RemoteStorageDownloadUGCResult_t;
+
+typedef struct {
+    int32              m_eResult;
+    SteamLeaderboard_t m_hSteamLeaderboard;
+} LeaderboardUGCSet_t;
 #pragma pack(pop)
 
 typedef enum {
@@ -214,6 +246,7 @@ SteamAPICall_t SteamAPI_ISteamUserStats_UploadLeaderboardScore(ISteamUserStats *
 SteamAPICall_t SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(ISteamUserStats *self, SteamLeaderboard_t leaderboard, ELeaderboardDataRequest request, int range_start, int range_end);
 bool           SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(ISteamUserStats *self, SteamLeaderboardEntries_t entries, int index, LeaderboardEntry_t *entry, int32 *details, int details_max);
 int            SteamAPI_ISteamUserStats_GetLeaderboardEntryCount(ISteamUserStats *self, SteamLeaderboard_t leaderboard);
+SteamAPICall_t SteamAPI_ISteamUserStats_AttachLeaderboardUGC(ISteamUserStats *self, SteamLeaderboard_t leaderboard, UGCHandle_t ugc);
 
 /* ISteamRemoteStorage */
 bool        SteamAPI_ISteamRemoteStorage_FileWrite(ISteamRemoteStorage *self, const char *file, const void *data, int32 size);
@@ -223,6 +256,10 @@ bool        SteamAPI_ISteamRemoteStorage_FileExists(ISteamRemoteStorage *self, c
 bool        SteamAPI_ISteamRemoteStorage_FileDelete(ISteamRemoteStorage *self, const char *file);
 int32       SteamAPI_ISteamRemoteStorage_GetFileCount(ISteamRemoteStorage *self);
 const char* SteamAPI_ISteamRemoteStorage_GetFileNameAndSize(ISteamRemoteStorage *self, int32 index, int32 *size);
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_FileShare(ISteamRemoteStorage *self, const char *file);
+SteamAPICall_t SteamAPI_ISteamRemoteStorage_UGCDownload(ISteamRemoteStorage *self, UGCHandle_t content, uint32 priority);
+bool           SteamAPI_ISteamRemoteStorage_GetUGCDetails(ISteamRemoteStorage *self, UGCHandle_t content, AppId_t *app_id, char **name, int32 *size, uint64_t *owner);
+int32          SteamAPI_ISteamRemoteStorage_UGCRead(ISteamRemoteStorage *self, UGCHandle_t content, void *data, int32 size, uint32 offset, EUGCReadAction action);
 
 /* ISteamApps */
 bool        SteamAPI_ISteamApps_BIsSubscribed(ISteamApps *self);

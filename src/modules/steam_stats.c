@@ -463,6 +463,11 @@ PHP_FUNCTION(steam_stats_get_downloaded_entry)
         add_next_index_long(&details_arr, (zend_long)details[i]);
     }
     add_assoc_zval(return_value, "details", &details_arr);
+
+    /* File attached to this entry via steam_stats_attach_leaderboard_ugc, or -1
+       (k_UGCHandleInvalid, all bits set) when there is none. Fetch it with
+       steam_remote_ugc_download + steam_remote_ugc_read. */
+    add_assoc_long(return_value, "ugc", (zend_long)entry.m_hUGC);
 }
 
 PHP_FUNCTION(steam_stats_get_leaderboard_entry_count)
@@ -481,4 +486,32 @@ PHP_FUNCTION(steam_stats_get_leaderboard_entry_count)
 
     RETURN_LONG((zend_long)SteamAPI_ISteamUserStats_GetLeaderboardEntryCount(
         stats, (SteamLeaderboard_t)leaderboard));
+}
+
+PHP_FUNCTION(steam_stats_attach_leaderboard_ugc)
+{
+    zend_long leaderboard;
+    zend_long ugc;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(leaderboard)
+        Z_PARAM_LONG(ugc)
+    ZEND_PARSE_PARAMETERS_END();
+
+    ISteamUserStats *stats = steamworks_stats();
+    if (!stats) {
+        php_error_docref(NULL, E_WARNING, "Steam not initialized");
+        RETURN_FALSE;
+    }
+
+    /* Attaches a shared file (steam_remote_file_share) to the current user's entry
+       on this leaderboard — the entry must exist, so upload a score first.
+       Async → steam_get_call_result() → "leaderboard_ugc_set". */
+    SteamAPICall_t call = SteamAPI_ISteamUserStats_AttachLeaderboardUGC(
+        stats, (SteamLeaderboard_t)leaderboard, (UGCHandle_t)ugc);
+    if (call == 0) {
+        RETURN_FALSE;
+    }
+    steamworks_register_call(call, STEAMWORKS_CALL_LEADERBOARD_UGC_SET);
+    RETURN_LONG((zend_long)call);
 }

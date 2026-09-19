@@ -1,6 +1,24 @@
 # Changelog
 
-## [Unreleased]
+## [0.16.0] - Unreleased
+
+Shared files on leaderboard entries (Phase 4a of the multiplayer plan in
+CLAUDE.md). A cloud file can be shared, attached to the player's own leaderboard
+entry, and downloaded by anyone who reads that entry — e.g. the save game of a
+weekly challenge's winner, or a friend's company data. Steam's own storage, no
+server of the game's. Callback IDs and struct layouts copied from the Steamworks
+SDK headers (both interfaces unchanged between 1.64 and 1.65).
+
+### Added
+- ISteamRemoteStorage: `steam_remote_file_share()` (async → `remote_file_shared`,
+  CallResult 1307), `steam_remote_ugc_download()` (async → `remote_ugc_downloaded`,
+  1317), `steam_remote_ugc_read()`, `steam_remote_get_ugc_details()`
+- ISteamUserStats: `steam_stats_attach_leaderboard_ugc()` (async →
+  `leaderboard_ugc_set`, 1111)
+- `steam_stats_get_downloaded_entry()` returns the entry's attached file as `ugc`
+- Constant `STEAM_UGC_HANDLE_INVALID` (-1) for an entry without a file
+- Stubs: `STEAM_LEADERBOARD_DATA_FRIENDS` and `STEAM_LEADERBOARD_DETAILS_MAX`,
+  which the extension registered but the stubs lacked
 
 ### Fixed
 - README listed 54 of the extension's functions; the 41 added since v0.6
