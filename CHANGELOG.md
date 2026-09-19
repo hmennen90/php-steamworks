@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- README listed 54 of the extension's functions; the 41 added since v0.6
+  (auth tickets, friends list, Workshop, P2P networking) are now in it too
+
 ## [0.15.0] - 2026-08-21
 
 ### Added

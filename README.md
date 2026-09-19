@@ -83,7 +83,7 @@ steam_shutdown();
 
 ## Available Functions
 
-54 functions across 6 Steamworks interfaces. Full signatures with docblocks live in
+116 functions across 10 Steamworks interfaces. Full signatures with docblocks live in
 [`stubs/steamworks.php`](stubs/steamworks.php) (IDE autocompletion).
 
 ### Core
@@ -95,12 +95,26 @@ steam_shutdown();
 - `steam_user_get_steam_id(): int|false`
 - `steam_user_is_logged_on(): bool`
 - `steam_user_get_player_steam_level(): int|false`
+- `steam_user_get_auth_session_ticket(): array|false`
+- `steam_user_begin_auth_session(string $ticket, int $steam_id): int|false`
+- `steam_user_end_auth_session(int $steam_id): bool`
+- `steam_user_cancel_auth_ticket(int $handle): bool`
+- `steam_user_get_auth_ticket_for_web_api(?string $identity = null): int|false`
+- `steam_user_get_web_api_ticket_result(int $handle): ?array` — `null` until the callback arrived
 
 ### Friends
 - `steam_friends_get_name(): string|false`
 - `steam_friends_set_rich_presence(string $key, ?string $value = null): bool`
 - `steam_friends_activate_overlay(string $dialog): void`
 - `steam_friends_activate_overlay_to_web_page(string $url, bool $modal = false): void`
+- `steam_friends_get_persona_state(): int|false`
+- `steam_friends_get_friend_count(int $flags = STEAM_FRIEND_FLAG_IMMEDIATE): int|false`
+- `steam_friends_get_friend_by_index(int $index, int $flags = STEAM_FRIEND_FLAG_IMMEDIATE): int|false`
+- `steam_friends_get_friend_relationship(int $steam_id): int|false`
+- `steam_friends_get_friend_persona_state(int $steam_id): int|false`
+- `steam_friends_get_friend_persona_name(int $steam_id): string|false`
+- `steam_friends_request_user_information(int $steam_id, bool $name_only = false): bool`
+- `steam_friends_get_friend_avatar(int $steam_id, int $size = STEAM_AVATAR_MEDIUM): ?array` — RGBA pixels
 
 ### Stats & Achievements
 - `steam_stats_set_achievement(string $id): bool`
@@ -181,6 +195,37 @@ Verified against Steamworks SDK 1.65 (`STEAMTIMELINE_INTERFACE_V004`).
 - `steam_timeline_add_game_phase_tag(string $tag_name, string $tag_icon, string $tag_group, int $priority = 0): bool`
 - `steam_timeline_set_game_phase_attribute(string $attribute_group, string $attribute_value, int $priority = 0): bool`
 - `steam_timeline_open_overlay_to_game_phase(string $phase_id): bool` / `steam_timeline_open_overlay_to_event(int $event): bool`
+
+### Workshop (UGC)
+Subscribe/unsubscribe, create, submit and delete are async (poll `steam_get_call_result`).
+- `steam_ugc_subscribe_item(int $file_id): int|false` / `steam_ugc_unsubscribe_item(int $file_id): int|false`
+- `steam_ugc_get_num_subscribed_items(bool $include_locally_disabled = false): int|false`
+- `steam_ugc_get_subscribed_items(bool $include_locally_disabled = false): array|false`
+- `steam_ugc_get_item_state(int $file_id): int|false`
+- `steam_ugc_get_item_install_info(int $file_id): array|false`
+- `steam_ugc_get_item_download_info(int $file_id): array|false`
+- `steam_ugc_download_item(int $file_id, bool $high_priority = false): bool`
+- `steam_ugc_create_item(int $app_id, int $file_type = STEAM_UGC_FILE_TYPE_COMMUNITY): int|false`
+- `steam_ugc_start_item_update(int $app_id, int $file_id): int`
+- `steam_ugc_set_item_title(int $handle, string $title): bool`
+- `steam_ugc_set_item_description(int $handle, string $description): bool`
+- `steam_ugc_set_item_visibility(int $handle, int $visibility): bool`
+- `steam_ugc_set_item_content(int $handle, string $content_folder): bool`
+- `steam_ugc_set_item_preview(int $handle, string $preview_file): bool`
+- `steam_ugc_set_item_tags(int $handle, array $tags): bool`
+- `steam_ugc_submit_item_update(int $handle, ?string $change_note = null): int|false`
+- `steam_ugc_get_item_update_progress(int $handle): array`
+- `steam_ugc_delete_item(int $file_id): int|false`
+
+### Networking (P2P over the Steam relay)
+- `steam_net_init_relay_network_access(): bool`
+- `steam_net_create_listen_socket_p2p(int $virtual_port = 0): int|false`
+- `steam_net_connect_p2p(int $steam_id, int $virtual_port = 0): int|false`
+- `steam_net_accept_connection(int $connection): int|false`
+- `steam_net_close_connection(int $connection, int $reason = 0, ?string $debug = null, bool $linger = false): bool`
+- `steam_net_send_message(int $connection, string $data, bool $reliable = true): int|false`
+- `steam_net_receive_messages(int $connection, int $max = 32): array|false`
+- `steam_net_get_connection_events(): array` — connection state changes since the last call
 
 ## Leaderboards & async calls
 
