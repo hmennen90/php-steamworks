@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.16.0] - Unreleased
+## [0.16.0] - 2026-09-20
 
 Multiplayer on Steam's own infrastructure (Phase 4 of CLAUDE.md): shared files
 on leaderboard entries, invites and joins over rich presence, lobbies, and what
